@@ -8,6 +8,7 @@
 
 import 'dotenv/config';
 import Database from 'better-sqlite3';
+import { mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -16,6 +17,9 @@ const __dirname = dirname(__filename);
 // DATABASE_PATH env var lets Railway (or any host) point to a persistent volume.
 // Falls back to the project-root db file for local development.
 const DB_PATH = process.env['DATABASE_PATH'] ?? join(__dirname, '..', '..', 'spark-bid.db');
+
+// Ensure the directory exists before opening (needed when DATABASE_PATH points to a volume mount)
+mkdirSync(dirname(DB_PATH), { recursive: true });
 
 export const db = new Database(DB_PATH);
 
