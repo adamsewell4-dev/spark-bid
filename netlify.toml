@@ -1,0 +1,9 @@
+[build]
+  command = "npm run build:ui"
+  publish = "dist/ui"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # Set RAILWAY_URL in the Netlify dashboard → Site settings → Environment variables
+  # Example: https://spark-bid-production.up.railway.app
+  # The build:ui script uses this to generate the API proxy in _redirects.
