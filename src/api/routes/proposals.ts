@@ -13,6 +13,25 @@ import { generateProposal } from '../../proposals/index.js';
 export const proposalsRouter = Router();
 
 // ─────────────────────────────────────────────────────────────
+// GET /api/proposals — list all proposals with opportunity info
+// ─────────────────────────────────────────────────────────────
+
+proposalsRouter.get('/', (_req: Request, res: Response) => {
+  try {
+    const rows = db.prepare(`
+      SELECT p.*, o.title as opportunity_title, o.agency, o.response_deadline
+      FROM proposals p
+      LEFT JOIN opportunities o ON o.id = p.opportunity_id
+      ORDER BY p.created_at DESC
+    `).all();
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ success: false, error: `Could not load proposals: ${message}` });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
 // POST /api/proposals/generate
 // Must be registered before /:opportunityId to avoid route conflict
 // ─────────────────────────────────────────────────────────────

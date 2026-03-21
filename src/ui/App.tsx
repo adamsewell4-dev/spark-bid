@@ -4,6 +4,7 @@ import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './pages/Dashboard';
 import { OpportunityDetail } from './pages/OpportunityDetail';
 import { ProposalView } from './pages/ProposalView';
+import { ProposalsList } from './pages/ProposalsList';
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/opportunities/:id" element={<OpportunityDetail />} />
+          <Route path="/proposals" element={<ProposalsList />} />
           <Route path="/proposals/:opportunityId" element={<ProposalView />} />
         </Routes>
       </main>
