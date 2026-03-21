@@ -40,6 +40,15 @@ const VIDEO_PRODUCTION_KEYWORDS: readonly string[] = [
   'event production',
   'photography services',
   'animation services',
+  'content creation',
+  'video content',
+  'video services',
+  'digital media',
+  'media services',
+  'film services',
+  'video coverage',
+  'photo and video',
+  'video and photo',
 ];
 
 // Single words that indicate video/media work ONLY when not excluded
@@ -153,19 +162,9 @@ export function isRelevantOpportunity(opportunity: SamGovOpportunity): boolean {
   // Exact NAICS 512110 match — always include
   if (naics === config.naicsFilter) return true;
 
-  // naicsCode not set in the API response — SAM.gov already filtered by
-  // 512110, so trust it and include the opportunity
-  if (naics === '') return true;
-
-  // naicsCode is explicitly set to a non-media sector code — this is a
-  // secondary-NAICS hit (e.g. a defense contractor also tagged 512110).
-  // Exclude unless it has very specific video production keywords.
-  if (!naics.startsWith('51')) {
-    return containsVideoKeyword(opportunity) &&
-      !EXCLUSION_KEYWORDS.some(kw => (opportunity.title ?? '').toLowerCase().includes(kw));
-  }
-
-  // NAICS is in the information sector (51xxxx) — use keyword filter
+  // For everything else (missing NAICS or wrong NAICS), require video keywords.
+  // SAM.gov's naicsCode filter is too broad — it matches secondary codes and
+  // returns completely unrelated opportunities (welding, turbines, shipping, etc.)
   return containsVideoKeyword(opportunity);
 }
 
