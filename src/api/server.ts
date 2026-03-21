@@ -9,12 +9,14 @@ import express from 'express';
 import cors from 'cors';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import cron from 'node-cron';
 import { config } from '../config.js';
 import { opportunitiesRouter } from './routes/opportunities.js';
 import { complianceRouter } from './routes/compliance.js';
 import { proposalsRouter } from './routes/proposals.js';
 import { parserRouter } from './routes/parser.js';
 import { authRouter, requireAuth } from './routes/auth.js';
+import { runMonitorCycle } from '../monitor/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,6 +53,22 @@ if (process.env['SERVE_STATIC'] === 'true') {
     res.sendFile(path.join(uiPath, 'index.html'));
   });
 }
+
+// ─────────────────────────────────────────────────────────────
+// SAM.gov monitor — scheduled daily at 02:00 UTC
+// ─────────────────────────────────────────────────────────────
+
+cron.schedule('0 2 * * *', () => {
+  console.log(
+    `[${new Date().toISOString()}] [cron] [monitor] [starting scheduled SAM.gov scan]`
+  );
+  runMonitorCycle().catch((err: unknown) => {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(
+      `[${new Date().toISOString()}] [cron] [monitor] [scheduled scan failed: ${message}]`
+    );
+  });
+});
 
 // ─────────────────────────────────────────────────────────────
 // Start server
