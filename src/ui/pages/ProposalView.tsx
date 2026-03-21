@@ -104,6 +104,57 @@ function renderMarkdown(text: string): React.ReactNode[] {
       continue;
     }
 
+    // Markdown table (lines starting with |)
+    if (line.startsWith('|')) {
+      const tableLines: string[] = [];
+      while (i < lines.length && lines[i].startsWith('|')) {
+        tableLines.push(lines[i]);
+        i++;
+      }
+      // Separate header, separator, and body rows
+      const rows = tableLines.filter((l) => !/^\|[-| :]+\|$/.test(l.trim()));
+      const [headerRow, ...bodyRows] = rows;
+      const parseRow = (row: string) =>
+        row
+          .split('|')
+          .slice(1, -1)
+          .map((cell) => cell.trim());
+
+      elements.push(
+        <div key={`table-${i}`} className="overflow-x-auto my-4">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-gray-50">
+                {parseRow(headerRow ?? '').map((cell, ci) => (
+                  <th
+                    key={ci}
+                    className="border border-gray-200 px-3 py-2 text-left font-semibold text-gray-800"
+                  >
+                    {renderInline(cell)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {bodyRows.map((row, ri) => (
+                <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                  {parseRow(row).map((cell, ci) => (
+                    <td
+                      key={ci}
+                      className="border border-gray-200 px-3 py-2 text-gray-700 align-top"
+                    >
+                      {renderInline(cell)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      continue;
+    }
+
     // Horizontal rule
     if (line.startsWith('---') || line.startsWith('===')) {
       elements.push(<hr key={i} className="border-gray-200 my-4" />);
