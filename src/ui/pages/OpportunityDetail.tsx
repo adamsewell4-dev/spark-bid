@@ -252,7 +252,10 @@ export function OpportunityDetail() {
     setGenerating(true);
     setGenerateError(null);
     try {
-      const res = await fetch('/api/proposals/generate', {
+      // Call Railway directly to bypass Netlify's 26s proxy timeout.
+      // Proposal generation takes 30-90s (Claude API), so we need a direct connection.
+      const apiBase = import.meta.env.VITE_RAILWAY_URL ?? '';
+      const res = await fetch(`${apiBase}/api/proposals/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ opportunityId: id }),
