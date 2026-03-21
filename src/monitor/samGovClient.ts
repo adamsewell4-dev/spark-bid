@@ -184,6 +184,10 @@ async function fetchPage(
     // Only return actionable solicitation types (matches SAM.gov website defaults):
     // p=Presolicitation, o=Solicitation, k=Combined Synopsis, r=Sources Sought
     ptype: 'p,o,k,r',
+    // Only return opportunities with a future response deadline.
+    // This is the key filter — without it, SAM.gov returns tens of thousands
+    // of expired records that match 512110 as a secondary NAICS code.
+    rdlfrom: today,
   };
 
   const MAX_RETRIES = 3;
