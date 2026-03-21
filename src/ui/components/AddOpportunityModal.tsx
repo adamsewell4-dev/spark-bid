@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Plus, Trash2, ExternalLink } from 'lucide-react';
+import { authFetch } from '../lib/auth';
 
 interface Props {
   onClose: () => void;
@@ -43,7 +44,7 @@ export function AddOpportunityModal({ onClose, onSaved }: Props) {
 
     try {
       const validUrls = attachmentUrls.filter((u) => u.trim() !== '');
-      const res = await fetch('/api/opportunities', {
+      const res = await authFetch('/api/opportunities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

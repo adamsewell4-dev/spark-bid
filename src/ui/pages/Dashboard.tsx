@@ -4,6 +4,7 @@ import { Search, ArrowRight, Inbox, Plus } from 'lucide-react';
 import { Badge } from '../components/Badge';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { AddOpportunityModal } from '../components/AddOpportunityModal';
+import { authFetch } from '../lib/auth';
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -106,9 +107,7 @@ function OpportunityCard({ opp, hasRequirements, hasProposal }: OpportunityCardP
 
       {/* Footer */}
       <div className="mt-auto pt-2 flex items-center justify-between">
-        {opp.naics_code && (
-          <span className="text-xs text-gray-400">NAICS {opp.naics_code}</span>
-        )}
+        <span className="text-xs text-gray-400">NAICS {opp.naics_code ?? '512110'}</span>
         <span className="ml-auto flex items-center gap-1 text-indigo-600 text-xs font-medium">
           View Details <ArrowRight size={12} />
         </span>
@@ -164,7 +163,7 @@ export function Dashboard() {
       const url = debouncedSearch
         ? `/api/opportunities?search=${encodeURIComponent(debouncedSearch)}`
         : '/api/opportunities';
-      const res = await fetch(url);
+      const res = await authFetch(url);
       const json: ApiResponse = await res.json();
       if (!json.success) throw new Error(json.error ?? 'Unknown error');
       setOpportunities(json.data ?? []);
@@ -191,8 +190,8 @@ export function Dashboard() {
         opportunities.map(async (opp) => {
           try {
             const [detailRes, proposalRes] = await Promise.allSettled([
-              fetch(`/api/opportunities/${opp.id}`),
-              fetch(`/api/proposals/${opp.id}`),
+              authFetch(`/api/opportunities/${opp.id}`),
+              authFetch(`/api/proposals/${opp.id}`),
             ]);
 
             if (detailRes.status === 'fulfilled' && detailRes.value.ok) {

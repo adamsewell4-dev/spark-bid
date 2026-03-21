@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, ArrowRight, Inbox } from 'lucide-react';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { authFetch } from '../lib/auth';
 
 interface ProposalSummary {
   id: string;
@@ -26,7 +27,7 @@ export function ProposalsList() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/proposals')
+    authFetch('/api/proposals')
       .then((r) => r.json())
       .then((json) => {
         if (!json.success) throw new Error(json.error ?? 'Unknown error');

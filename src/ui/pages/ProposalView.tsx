@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Copy, Download, CheckCircle } from 'lucide-react';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { authFetch } from '../lib/auth';
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -164,7 +165,7 @@ export function ProposalView() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/proposals/${opportunityId}`);
+      const res = await authFetch(`/api/proposals/${opportunityId}`);
       const json = await res.json();
       if (!json.success) throw new Error(json.error ?? 'Unknown error');
       setProposal(json.data);

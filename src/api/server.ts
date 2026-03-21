@@ -14,6 +14,7 @@ import { opportunitiesRouter } from './routes/opportunities.js';
 import { complianceRouter } from './routes/compliance.js';
 import { proposalsRouter } from './routes/proposals.js';
 import { parserRouter } from './routes/parser.js';
+import { authRouter, requireAuth } from './routes/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,10 +32,11 @@ app.use(express.json());
 // API Routes
 // ─────────────────────────────────────────────────────────────
 
-app.use('/api/opportunities', opportunitiesRouter);
-app.use('/api/compliance', complianceRouter);
-app.use('/api/proposals', proposalsRouter);
-app.use('/api/parse', parserRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/opportunities', requireAuth, opportunitiesRouter);
+app.use('/api/compliance', requireAuth, complianceRouter);
+app.use('/api/proposals', requireAuth, proposalsRouter);
+app.use('/api/parse', requireAuth, parserRouter);
 
 // ─────────────────────────────────────────────────────────────
 // Serve React UI in production

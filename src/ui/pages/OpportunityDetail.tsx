@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '../components/Badge';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { authFetch, railwayFetch } from '../lib/auth';
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -187,7 +188,7 @@ export function OpportunityDetail() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/opportunities/${id}`);
+      const res = await authFetch(`/api/opportunities/${id}`);
       const json = await res.json();
       if (!json.success) throw new Error(json.error ?? 'Unknown error');
       setOpportunity(json.data);
@@ -205,7 +206,7 @@ export function OpportunityDetail() {
   // Check if a proposal already exists
   useEffect(() => {
     if (!id) return;
-    fetch(`/api/proposals/${id}`)
+    authFetch(`/api/proposals/${id}`)
       .then((r) => r.json())
       .then((json) => {
         if (json.success) setProposalReady(true);
@@ -219,7 +220,7 @@ export function OpportunityDetail() {
     if (!opportunity.requirements || opportunity.requirements.length === 0) return;
 
     setChecklistLoading(true);
-    fetch(`/api/compliance/${id}`)
+    authFetch(`/api/compliance/${id}`)
       .then((r) => r.json())
       .then((json) => {
         if (json.success) setChecklist(json.data);
@@ -234,7 +235,7 @@ export function OpportunityDetail() {
     setParseError(null);
     setParseResult(null);
     try {
-      const res = await fetch(`/api/parse/${id}`, { method: 'POST' });
+      const res = await authFetch(`/api/parse/${id}`, { method: 'POST' });
       const json = await res.json();
       if (!json.success) throw new Error(json.error ?? 'Parse failed');
       setParseResult(json.data);
@@ -253,11 +254,8 @@ export function OpportunityDetail() {
     setGenerateError(null);
     try {
       // Call Railway directly to bypass Netlify's 26s proxy timeout.
-      // Proposal generation takes 30-90s (Claude API), so we need a direct connection.
-      const apiBase = import.meta.env.VITE_RAILWAY_URL ?? '';
-      const res = await fetch(`${apiBase}/api/proposals/generate`, {
+      const res = await railwayFetch('/api/proposals/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ opportunityId: id }),
       });
       const json = await res.json();

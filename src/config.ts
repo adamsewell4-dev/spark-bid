@@ -57,6 +57,9 @@ export const config = {
 
   /** Express API server port. Default: 3000 */
   port: optionalEnvNumber('PORT', 3000),
+
+  /** App login password — protects the dashboard from public access */
+  appPassword: optionalEnv('APP_PASSWORD', ''),
 } as const;
 
 export type Config = typeof config;
