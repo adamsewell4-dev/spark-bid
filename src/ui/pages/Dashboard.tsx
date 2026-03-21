@@ -62,6 +62,8 @@ function formatDeadlineLabel(deadline: string | null): string {
 
 type FilterTab = 'all' | 'active' | 'deadline-soon' | 'no-documents';
 
+const PRIMARY_NAICS = '512110';
+
 // ─────────────────────────────────────────────────────────────
 // OpportunityCard
 // ─────────────────────────────────────────────────────────────
@@ -149,6 +151,7 @@ export function Dashboard() {
   const [requirementCounts, setRequirementCounts] = useState<Record<string, number>>({});
   const [proposalIds, setProposalIds] = useState<Set<string>>(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
+  const [naicsOnly, setNaicsOnly] = useState(false);
 
   // Debounce search input
   useEffect(() => {
@@ -222,6 +225,7 @@ export function Dashboard() {
 
   // Filter logic
   const filteredOpportunities = opportunities.filter((opp) => {
+    if (naicsOnly && opp.naics_code !== PRIMARY_NAICS) return false;
     if (activeTab === 'active') return opp.active === 1;
     if (activeTab === 'deadline-soon') {
       const days = daysUntilDeadline(opp.response_deadline);
@@ -283,21 +287,34 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-lg w-fit">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors duration-150 ${
-              activeTab === tab.key
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Filter Tabs + NAICS toggle */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors duration-150 ${
+                activeTab === tab.key
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setNaicsOnly((v) => !v)}
+          className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors duration-150 ${
+            naicsOnly
+              ? 'bg-indigo-600 text-white border-indigo-600'
+              : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-400 hover:text-indigo-600'
+          }`}
+        >
+          NAICS 512110 only
+        </button>
       </div>
 
       {/* Content */}
