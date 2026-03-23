@@ -36,10 +36,10 @@ export type ProjectType =
 
 export type PaymentSchedule = 'option_a' | 'option_b' | null;
 
-/** Raw participant record from Fireflies */
-export interface FirefliesParticipant {
-  displayName: string;
-  email?: string;
+/** Speaker record from Fireflies (has the human-readable name) */
+export interface FirefliesSpeaker {
+  speaker_id: string;
+  name: string;
 }
 
 /** A single sentence from the Fireflies transcript */
@@ -62,8 +62,9 @@ export interface FirefliesSummary {
 export interface FirefliesTranscriptSummary {
   id: string;
   title: string;
-  date: number; // Unix timestamp in ms
-  participants: FirefliesParticipant[];
+  date: number;           // Unix timestamp in ms
+  participants: string[]; // Array of participant email addresses
+  speakers: FirefliesSpeaker[];
   summary: FirefliesSummary | null;
 }
 
@@ -81,8 +82,8 @@ export interface DiscoveryCall {
   title: string;
   clientName: string;
   projectDescription: string;
-  callDate: string; // ISO 8601 date string YYYY-MM-DD
-  participants: FirefliesParticipant[];
+  callDate: string;       // ISO 8601 date string YYYY-MM-DD
+  speakers: FirefliesSpeaker[];
 }
 
 /**
@@ -199,9 +200,10 @@ export async function fetchDiscoveryCalls(limit = 50): Promise<DiscoveryCall[]> 
         id
         title
         date
-        participants {
-          displayName
-          email
+        participants
+        speakers {
+          speaker_id
+          name
         }
       }
     }
@@ -228,7 +230,7 @@ export async function fetchDiscoveryCalls(limit = 50): Promise<DiscoveryCall[]> 
       clientName: parsed.clientName,
       projectDescription: parsed.projectDescription,
       callDate: parsed.callDate,
-      participants: t.participants ?? [],
+      speakers: t.speakers ?? [],
     });
   }
 
@@ -252,9 +254,10 @@ export async function fetchTranscriptById(transcriptId: string): Promise<Firefli
         id
         title
         date
-        participants {
-          displayName
-          email
+        participants
+        speakers {
+          speaker_id
+          name
         }
         sentences {
           text
@@ -327,11 +330,10 @@ function buildTranscriptContext(transcript: FirefliesTranscript): string {
   const sentences = transcript.sentences ?? [];
 
   // Identify Daniel Dougherty as primary DSS speaker
-  const danielSentences = sentences.filter(
-    (s) =>
-      s.speaker_name?.toLowerCase().includes('daniel') === true ||
-      s.speaker_name?.toLowerCase().includes('dougherty') === true
-  );
+  const danielSentences = sentences.filter((s) => {
+    const name = s.speaker_name?.toLowerCase() ?? '';
+    return name.includes('daniel') || name.includes('dougherty');
+  });
   const otherSentences = sentences.filter((s) => !danielSentences.includes(s));
 
   const format = (s: FirefliesSentence) => `[${s.speaker_name ?? 'Unknown'}]: ${s.text}`;
@@ -344,7 +346,7 @@ function buildTranscriptContext(transcript: FirefliesTranscript): string {
 
   const header = [
     `Title: ${transcript.title}`,
-    `Participants: ${(transcript.participants ?? []).map((p) => p.displayName).join(', ')}`,
+    `Participants: ${(transcript.speakers ?? []).map((s) => s.name).join(', ')}`,
     transcript.summary?.gist ? `Summary: ${transcript.summary.gist}` : '',
     transcript.summary?.overview ? `Overview: ${transcript.summary.overview}` : '',
     '---',
