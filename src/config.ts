@@ -60,6 +60,17 @@ export const config = {
 
   /** App login password — protects the dashboard from public access */
   appPassword: optionalEnv('APP_PASSWORD', ''),
+
+  // ─── Commercial Proposal Integrations ───────────────────────
+
+  /** Fireflies.ai API key — pulls discovery call transcripts */
+  firefliesApiKey: optionalEnv('FIREFLIES_API_KEY', ''),
+
+  /** PandaDoc API key — creates and tracks commercial proposals */
+  pandadocApiKey: optionalEnv('PANDADOC_API_KEY', ''),
+
+  /** Saturation.io API key — creates and syncs AICP estimates */
+  saturationApiKey: optionalEnv('SATURATION_API_KEY', ''),
 } as const;
 
 export type Config = typeof config;

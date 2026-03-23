@@ -16,6 +16,7 @@ import { complianceRouter } from './routes/compliance.js';
 import { proposalsRouter } from './routes/proposals.js';
 import { parserRouter } from './routes/parser.js';
 import { authRouter, requireAuth } from './routes/auth.js';
+import { commercialRouter } from './routes/commercial.js';
 import { runMonitorCycle } from '../monitor/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -39,6 +40,7 @@ app.use('/api/opportunities', requireAuth, opportunitiesRouter);
 app.use('/api/compliance', requireAuth, complianceRouter);
 app.use('/api/proposals', requireAuth, proposalsRouter);
 app.use('/api/parse', requireAuth, parserRouter);
+app.use('/api/commercial', requireAuth, commercialRouter);
 
 // ─────────────────────────────────────────────────────────────
 // Serve React UI in production

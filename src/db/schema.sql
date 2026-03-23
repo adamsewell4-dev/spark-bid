@@ -97,6 +97,49 @@ CREATE TABLE IF NOT EXISTS past_performance (
 );
 
 -- ─────────────────────────────────────────────────────────────
+-- commercial_projects
+-- Projects sourced from Fireflies discovery call transcripts.
+-- Drives the commercial proposal workflow (brief → PandaDoc → Saturation).
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS commercial_projects (
+  id                      TEXT PRIMARY KEY,
+  fireflies_transcript_id TEXT UNIQUE,           -- Fireflies transcript ID
+  client_name             TEXT NOT NULL,
+  project_type            TEXT,                  -- brand_commercial | product_launch | corporate_story | training_video
+  project_description     TEXT,
+  deliverables            TEXT,                  -- JSON array of strings
+  timeline                TEXT,
+  budget_signal           TEXT,                  -- What was said on the call, verbatim
+  tone                    TEXT,                  -- Creative direction / tone descriptors
+  cover_letter_seeds      TEXT,                  -- JSON array of key phrases from transcript
+  case_study_match        TEXT,                  -- Suggested past performance references
+  payment_schedule        TEXT,                  -- 'option_a' | 'option_b'
+  status                  TEXT NOT NULL DEFAULT 'brief_pending',
+    -- brief_pending → brief_confirmed → generating → draft → sent → revised → signed
+  saturation_project_id   TEXT,
+  pandadoc_document_id    TEXT,
+  pandadoc_status         TEXT,                  -- draft | sent | viewed | approved | rejected | signed
+  created_at              TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  updated_at              TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+
+-- ─────────────────────────────────────────────────────────────
+-- proposal_versions
+-- Tracks each PandaDoc document version per commercial project.
+-- Required because sent/viewed/signed docs must never be overwritten —
+-- a new version must be created and flagged for review instead.
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS proposal_versions (
+  id                      TEXT PRIMARY KEY,
+  commercial_project_id   TEXT NOT NULL REFERENCES commercial_projects(id) ON DELETE CASCADE,
+  pandadoc_document_id    TEXT NOT NULL,
+  version_number          INTEGER NOT NULL DEFAULT 1,
+  status                  TEXT,                  -- mirrors PandaDoc document status
+  needs_review            INTEGER NOT NULL DEFAULT 0,  -- 1 = flagged "Revised Version — review before sending"
+  created_at              TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+
+-- ─────────────────────────────────────────────────────────────
 -- Indexes for common query patterns
 -- ─────────────────────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS idx_opportunities_naics      ON opportunities(naics_code);
@@ -107,4 +150,7 @@ CREATE INDEX IF NOT EXISTS idx_proposals_opportunity    ON proposals(opportunity
 CREATE INDEX IF NOT EXISTS idx_proposals_status         ON proposals(status);
 CREATE INDEX IF NOT EXISTS idx_deadlines_opportunity    ON deadlines(opportunity_id);
 CREATE INDEX IF NOT EXISTS idx_deadlines_date           ON deadlines(deadline_date);
-CREATE INDEX IF NOT EXISTS idx_requirements_opportunity ON requirements(opportunity_id);
+CREATE INDEX IF NOT EXISTS idx_requirements_opportunity  ON requirements(opportunity_id);
+CREATE INDEX IF NOT EXISTS idx_commercial_status         ON commercial_projects(status);
+CREATE INDEX IF NOT EXISTS idx_commercial_client         ON commercial_projects(client_name);
+CREATE INDEX IF NOT EXISTS idx_proposal_versions_project ON proposal_versions(commercial_project_id);

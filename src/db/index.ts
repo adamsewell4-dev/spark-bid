@@ -323,3 +323,175 @@ export function markDeadlineAlertSent(id: string): void {
   const stmt = db.prepare('UPDATE deadlines SET alert_sent = 1 WHERE id = ?');
   stmt.run(id);
 }
+
+// ─────────────────────────────────────────────────────────────
+// Commercial project helpers
+// ─────────────────────────────────────────────────────────────
+
+export interface CommercialProjectRow {
+  id: string;
+  fireflies_transcript_id: string | null;
+  client_name: string;
+  project_type: string | null;
+  project_description: string | null;
+  deliverables: string | null;          // JSON array
+  timeline: string | null;
+  budget_signal: string | null;
+  tone: string | null;
+  cover_letter_seeds: string | null;    // JSON array
+  case_study_match: string | null;
+  payment_schedule: string | null;
+  status: string;
+  saturation_project_id: string | null;
+  pandadoc_document_id: string | null;
+  pandadoc_status: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UpsertCommercialProjectInput {
+  id: string;
+  fireflies_transcript_id?: string | null;
+  client_name: string;
+  project_type?: string | null;
+  project_description?: string | null;
+  deliverables?: string | null;
+  timeline?: string | null;
+  budget_signal?: string | null;
+  tone?: string | null;
+  cover_letter_seeds?: string | null;
+  case_study_match?: string | null;
+  payment_schedule?: string | null;
+  status?: string;
+  saturation_project_id?: string | null;
+  pandadoc_document_id?: string | null;
+  pandadoc_status?: string | null;
+}
+
+export interface ProposalVersionRow {
+  id: string;
+  commercial_project_id: string;
+  pandadoc_document_id: string;
+  version_number: number;
+  status: string | null;
+  needs_review: number;
+  created_at: string;
+}
+
+/** Insert or update a commercial project record. */
+export function upsertCommercialProject(input: UpsertCommercialProjectInput): void {
+  const stmt = db.prepare(`
+    INSERT INTO commercial_projects (
+      id, fireflies_transcript_id, client_name, project_type, project_description,
+      deliverables, timeline, budget_signal, tone, cover_letter_seeds,
+      case_study_match, payment_schedule, status,
+      saturation_project_id, pandadoc_document_id, pandadoc_status, updated_at
+    ) VALUES (
+      @id, @fireflies_transcript_id, @client_name, @project_type, @project_description,
+      @deliverables, @timeline, @budget_signal, @tone, @cover_letter_seeds,
+      @case_study_match, @payment_schedule, @status,
+      @saturation_project_id, @pandadoc_document_id, @pandadoc_status,
+      strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+    )
+    ON CONFLICT(id) DO UPDATE SET
+      client_name             = excluded.client_name,
+      project_type            = excluded.project_type,
+      project_description     = excluded.project_description,
+      deliverables            = excluded.deliverables,
+      timeline                = excluded.timeline,
+      budget_signal           = excluded.budget_signal,
+      tone                    = excluded.tone,
+      cover_letter_seeds      = excluded.cover_letter_seeds,
+      case_study_match        = excluded.case_study_match,
+      payment_schedule        = excluded.payment_schedule,
+      status                  = excluded.status,
+      saturation_project_id   = excluded.saturation_project_id,
+      pandadoc_document_id    = excluded.pandadoc_document_id,
+      pandadoc_status         = excluded.pandadoc_status,
+      updated_at              = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+  `);
+
+  stmt.run({
+    id: input.id,
+    fireflies_transcript_id: input.fireflies_transcript_id ?? null,
+    client_name: input.client_name,
+    project_type: input.project_type ?? null,
+    project_description: input.project_description ?? null,
+    deliverables: input.deliverables ?? null,
+    timeline: input.timeline ?? null,
+    budget_signal: input.budget_signal ?? null,
+    tone: input.tone ?? null,
+    cover_letter_seeds: input.cover_letter_seeds ?? null,
+    case_study_match: input.case_study_match ?? null,
+    payment_schedule: input.payment_schedule ?? null,
+    status: input.status ?? 'brief_pending',
+    saturation_project_id: input.saturation_project_id ?? null,
+    pandadoc_document_id: input.pandadoc_document_id ?? null,
+    pandadoc_status: input.pandadoc_status ?? null,
+  });
+}
+
+/** Fetch a single commercial project by ID. */
+export function getCommercialProject(id: string): CommercialProjectRow | undefined {
+  const stmt = db.prepare<[string], CommercialProjectRow>(
+    'SELECT * FROM commercial_projects WHERE id = ?'
+  );
+  return stmt.get(id);
+}
+
+/** Fetch a commercial project by Fireflies transcript ID. */
+export function getCommercialProjectByTranscript(
+  transcriptId: string
+): CommercialProjectRow | undefined {
+  const stmt = db.prepare<[string], CommercialProjectRow>(
+    'SELECT * FROM commercial_projects WHERE fireflies_transcript_id = ?'
+  );
+  return stmt.get(transcriptId);
+}
+
+/** List all commercial projects, most recent first. */
+export function listCommercialProjects(): CommercialProjectRow[] {
+  const stmt = db.prepare<[], CommercialProjectRow>(
+    'SELECT * FROM commercial_projects ORDER BY created_at DESC'
+  );
+  return stmt.all();
+}
+
+/** Update only the status field of a commercial project. */
+export function updateCommercialProjectStatus(id: string, status: string): void {
+  const stmt = db.prepare(
+    `UPDATE commercial_projects SET status = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = ?`
+  );
+  stmt.run(status, id);
+}
+
+/** Insert a new proposal version record. */
+export function insertProposalVersion(input: {
+  id: string;
+  commercial_project_id: string;
+  pandadoc_document_id: string;
+  version_number: number;
+  status?: string | null;
+  needs_review?: number;
+}): void {
+  const stmt = db.prepare(`
+    INSERT INTO proposal_versions (id, commercial_project_id, pandadoc_document_id, version_number, status, needs_review)
+    VALUES (@id, @commercial_project_id, @pandadoc_document_id, @version_number, @status, @needs_review)
+  `);
+  stmt.run({
+    id: input.id,
+    commercial_project_id: input.commercial_project_id,
+    pandadoc_document_id: input.pandadoc_document_id,
+    version_number: input.version_number,
+    status: input.status ?? null,
+    needs_review: input.needs_review ?? 0,
+  });
+}
+
+/** List all proposal versions for a commercial project, newest first. */
+export function listProposalVersions(commercialProjectId: string): ProposalVersionRow[] {
+  const stmt = db.prepare<[string], ProposalVersionRow>(
+    'SELECT * FROM proposal_versions WHERE commercial_project_id = ? ORDER BY version_number DESC'
+  );
+  return stmt.all(commercialProjectId);
+}
