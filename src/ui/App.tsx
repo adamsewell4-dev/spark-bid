@@ -5,6 +5,8 @@ import { Dashboard } from './pages/Dashboard';
 import { OpportunityDetail } from './pages/OpportunityDetail';
 import { ProposalView } from './pages/ProposalView';
 import { ProposalsList } from './pages/ProposalsList';
+import { CommercialProposals } from './pages/CommercialProposals';
+import { BriefReview } from './pages/BriefReview';
 import { Login } from './pages/Login';
 import { isAuthenticated } from './lib/auth';
 
@@ -24,6 +26,8 @@ export default function App() {
           <Route path="/opportunities/:id" element={<OpportunityDetail />} />
           <Route path="/proposals" element={<ProposalsList />} />
           <Route path="/proposals/:opportunityId" element={<ProposalView />} />
+          <Route path="/commercial" element={<CommercialProposals />} />
+          <Route path="/commercial/:projectId" element={<BriefReview />} />
         </Routes>
       </main>
     </div>

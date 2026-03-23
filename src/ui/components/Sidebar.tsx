@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, FileText, Zap, ShoppingCart, ExternalLink } from 'lucide-react';
+import { LayoutDashboard, FileText, Zap, ShoppingCart, ExternalLink, Clapperboard } from 'lucide-react';
 
 export function Sidebar() {
   return (
@@ -11,11 +11,17 @@ export function Sidebar() {
           <Zap className="text-indigo-400" size={22} strokeWidth={2.5} />
           <span className="text-white font-bold text-lg tracking-tight">Spark Bid</span>
         </div>
-        <p className="text-slate-400 text-xs font-medium tracking-wide">GSA RFP Platform</p>
+        <p className="text-slate-400 text-xs font-medium tracking-wide">Proposal Platform</p>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-5 space-y-1">
+
+        {/* GSA Section */}
+        <div className="pb-1">
+          <p className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">GSA</p>
+        </div>
+
         <NavLink
           to="/"
           end
@@ -42,11 +48,30 @@ export function Sidebar() {
           }
         >
           <FileText size={18} />
+          GSA Proposals
+        </NavLink>
+
+        {/* Commercial Section */}
+        <div className="pt-4 pb-1">
+          <p className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Commercial</p>
+        </div>
+
+        <NavLink
+          to="/commercial"
+          className={({ isActive }) =>
+            `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 ${
+              isActive
+                ? 'bg-indigo-600 text-white'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+            }`
+          }
+        >
+          <Clapperboard size={18} />
           Proposals
         </NavLink>
 
         {/* Divider */}
-        <div className="pt-3 pb-1">
+        <div className="pt-4 pb-1">
           <p className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">External</p>
         </div>
 
