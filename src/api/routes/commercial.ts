@@ -236,7 +236,7 @@ commercialRouter.post('/projects/:id/generate', async (req, res) => {
     return res.json({ success: false, error: 'Project not found.' });
   }
 
-  if (!['brief_confirmed', 'draft'].includes(existing.status)) {
+  if (!['brief_confirmed', 'draft', 'generating'].includes(existing.status)) {
     return res.json({
       success: false,
       error: `Brief must be confirmed before generating a proposal. Current status: "${existing.status}".`,
@@ -299,6 +299,18 @@ commercialRouter.post('/projects/:id/generate', async (req, res) => {
     const message = err instanceof Error ? err.message : String(err);
     return res.json({ success: false, error: `Proposal generation failed: ${message}` });
   }
+});
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/commercial/projects/:id/reset
+// Reset a stuck "generating" project back to brief_confirmed
+// ─────────────────────────────────────────────────────────────
+
+commercialRouter.post('/projects/:id/reset', (req, res) => {
+  const existing = getCommercialProject(req.params.id);
+  if (!existing) return res.json({ success: false, error: 'Project not found.' });
+  updateCommercialProjectStatus(existing.id, 'brief_confirmed');
+  return res.json({ success: true, data: getCommercialProject(existing.id) });
 });
 
 // ─────────────────────────────────────────────────────────────
