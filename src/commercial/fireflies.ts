@@ -38,7 +38,7 @@ export type PaymentSchedule = 'option_a' | 'option_b' | null;
 
 /** Raw participant record from Fireflies */
 export interface FirefliesParticipant {
-  name: string;
+  displayName: string;
   email?: string;
 }
 
@@ -200,12 +200,8 @@ export async function fetchDiscoveryCalls(limit = 50): Promise<DiscoveryCall[]> 
         title
         date
         participants {
-          name
+          displayName
           email
-        }
-        summary {
-          keywords
-          gist
         }
       }
     }
@@ -257,7 +253,7 @@ export async function fetchTranscriptById(transcriptId: string): Promise<Firefli
         title
         date
         participants {
-          name
+          displayName
           email
         }
         sentences {
@@ -331,9 +327,10 @@ function buildTranscriptContext(transcript: FirefliesTranscript): string {
   const sentences = transcript.sentences ?? [];
 
   // Identify Daniel Dougherty as primary DSS speaker
-  const danielSentences = sentences.filter((s) =>
-    s.speaker_name?.toLowerCase().includes('daniel') ||
-    s.speaker_name?.toLowerCase().includes('dougherty')
+  const danielSentences = sentences.filter(
+    (s) =>
+      s.speaker_name?.toLowerCase().includes('daniel') === true ||
+      s.speaker_name?.toLowerCase().includes('dougherty') === true
   );
   const otherSentences = sentences.filter((s) => !danielSentences.includes(s));
 
@@ -347,7 +344,7 @@ function buildTranscriptContext(transcript: FirefliesTranscript): string {
 
   const header = [
     `Title: ${transcript.title}`,
-    `Participants: ${(transcript.participants ?? []).map((p) => p.name).join(', ')}`,
+    `Participants: ${(transcript.participants ?? []).map((p) => p.displayName).join(', ')}`,
     transcript.summary?.gist ? `Summary: ${transcript.summary.gist}` : '',
     transcript.summary?.overview ? `Overview: ${transcript.summary.overview}` : '',
     '---',
