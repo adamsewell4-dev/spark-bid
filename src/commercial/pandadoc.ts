@@ -46,23 +46,23 @@ export interface PandaDocDocument {
   links: { rel: string; href: string }[];
 }
 
-// PandaDoc content block types
+// PandaDoc content block types (v1 schema uses "value" not "text")
 interface TextBlock {
   type: 'text';
-  data: { text: string };
+  data: { value: string };
   style?: Record<string, unknown>;
 }
 
 interface HeadingBlock {
   type: 'heading';
-  data: { text: string; level: number };
+  data: { value: string; level: number };
 }
 
 interface TableBlock {
   type: 'table';
   data: {
-    headers: string[];
-    rows: string[][];
+    headers: { value: string }[];
+    rows: { value: string }[][];
   };
 }
 
@@ -158,80 +158,75 @@ function buildProposalContent(
   const blocks: ContentBlock[] = [];
 
   // ── Cover page header ──────────────────────────────────────
-  blocks.push({ type: 'heading', data: { text: 'Digital Spark Studios', level: 1 } });
-  blocks.push({ type: 'text', data: { text: `Proposal for ${project.client_name}` } });
-  blocks.push({ type: 'text', data: { text: `${project.project_description ?? ''}` } });
-  blocks.push({ type: 'text', data: { text: today } });
-  blocks.push({ type: 'text', data: { text: '' } });
-  blocks.push({ type: 'text', data: { text: 'Adam Sewell — Executive Producer / Partner & CEO' } });
-  blocks.push({ type: 'text', data: { text: 'Joshua Hieber — Executive Director' } });
-  blocks.push({ type: 'text', data: { text: '9525 Monroe Rd, Ste 150 · Charlotte, NC 28270' } });
-  blocks.push({ type: 'text', data: { text: 'www.digitalsparkstudios.com' } });
+  blocks.push({ type: 'heading', data: { value: 'Digital Spark Studios', level: 1 } });
+  blocks.push({ type: 'text', data: { value: `Proposal for ${project.client_name}` } });
+  blocks.push({ type: 'text', data: { value: project.project_description ?? '' } });
+  blocks.push({ type: 'text', data: { value: today } });
+  blocks.push({ type: 'text', data: { value: 'Adam Sewell — Executive Producer / Partner & CEO' } });
+  blocks.push({ type: 'text', data: { value: 'Joshua Hieber — Executive Director' } });
+  blocks.push({ type: 'text', data: { value: '9525 Monroe Rd, Ste 150 · Charlotte, NC 28270' } });
+  blocks.push({ type: 'text', data: { value: 'www.digitalsparkstudios.com' } });
 
   // ── Cover letter ───────────────────────────────────────────
-  blocks.push({ type: 'heading', data: { text: 'Cover Letter', level: 2 } });
-  // Split the cover letter into individual paragraph blocks
+  blocks.push({ type: 'heading', data: { value: 'Cover Letter', level: 2 } });
   for (const paragraph of coverLetterText.split('\n\n')) {
     if (paragraph.trim()) {
-      blocks.push({ type: 'text', data: { text: paragraph.trim() } });
+      blocks.push({ type: 'text', data: { value: paragraph.trim() } });
     }
   }
 
   // ── Deliverables ───────────────────────────────────────────
-  blocks.push({ type: 'heading', data: { text: 'Deliverables', level: 2 } });
+  blocks.push({ type: 'heading', data: { value: 'Deliverables', level: 2 } });
   if (deliverables.length > 0) {
     blocks.push({
       type: 'table',
       data: {
-        headers: ['Deliverable', 'Notes'],
-        rows: deliverables.map((d) => [d, '']),
+        headers: [{ value: 'Deliverable' }, { value: 'Notes' }],
+        rows: deliverables.map((d) => [{ value: d }, { value: '' }]),
       },
     });
   } else {
-    blocks.push({ type: 'text', data: { text: 'Deliverables to be confirmed.' } });
+    blocks.push({ type: 'text', data: { value: 'Deliverables to be confirmed.' } });
   }
 
   if (project.timeline) {
-    blocks.push({ type: 'text', data: { text: `Estimated Timeline: ${project.timeline}` } });
+    blocks.push({ type: 'text', data: { value: `Estimated Timeline: ${project.timeline}` } });
   }
 
   // ── Investment Summary ─────────────────────────────────────
-  blocks.push({ type: 'heading', data: { text: 'Investment Summary', level: 2 } });
+  blocks.push({ type: 'heading', data: { value: 'Investment Summary', level: 2 } });
   blocks.push({
     type: 'table',
     data: {
-      headers: ['Phase', 'Scope of Work', 'Investment'],
-      rows: phases.map((phase) => [phase, '', '[TBD]']),
+      headers: [{ value: 'Phase' }, { value: 'Scope of Work' }, { value: 'Investment' }],
+      rows: phases.map((phase) => [{ value: phase }, { value: '' }, { value: '[TBD]' }]),
     },
   });
 
   // ── Total & Payment Schedule ───────────────────────────────
-  blocks.push({ type: 'heading', data: { text: 'Your Story, Strategically Told.', level: 2 } });
-  blocks.push({ type: 'text', data: { text: 'Total Investment: [TBD — to be completed]' } });
-  blocks.push({ type: 'heading', data: { text: 'Payment Schedule', level: 3 } });
-  blocks.push({ type: 'text', data: { text: paymentText } });
+  blocks.push({ type: 'heading', data: { value: 'Your Story, Strategically Told.', level: 2 } });
+  blocks.push({ type: 'text', data: { value: 'Total Investment: [TBD — to be completed]' } });
+  blocks.push({ type: 'heading', data: { value: 'Payment Schedule', level: 3 } });
+  blocks.push({ type: 'text', data: { value: paymentText } });
   blocks.push({
     type: 'text',
     data: {
-      text: 'Any work requested outside the original scope of this agreement will be addressed via a written change order, mutually agreed upon before work begins.',
+      value: 'Any work requested outside the original scope of this agreement will be addressed via a written change order, mutually agreed upon before work begins.',
     },
   });
 
   // ── Case Studies Note ──────────────────────────────────────
   if (project.case_study_match) {
-    blocks.push({ type: 'heading', data: { text: 'Relevant Experience', level: 2 } });
+    blocks.push({ type: 'heading', data: { value: 'Relevant Experience', level: 2 } });
     blocks.push({
       type: 'text',
-      data: { text: `Recommended case studies for this proposal: ${project.case_study_match}` },
+      data: { value: `Recommended case studies for this proposal: ${project.case_study_match}` },
     });
   }
 
   // ── Closing ────────────────────────────────────────────────
-  blocks.push({ type: 'heading', data: { text: `Thank You, ${project.client_name}`, level: 2 } });
-  blocks.push({
-    type: 'text',
-    data: { text: `${project.client_name} × Digital Spark Studios` },
-  });
+  blocks.push({ type: 'heading', data: { value: `Thank You, ${project.client_name}`, level: 2 } });
+  blocks.push({ type: 'text', data: { value: `${project.client_name} × Digital Spark Studios` } });
 
   return blocks;
 }
@@ -278,8 +273,15 @@ export async function createProposalDocument(
   const response = await axios.post<PandaDocDocument>(
     `${PANDADOC_BASE}/documents`,
     payload,
-    { headers: authHeaders(), timeout: 30_000 }
+    { headers: authHeaders(), timeout: 30_000, validateStatus: () => true }
   );
+
+  if (response.status !== 201 && response.status !== 200) {
+    const body = typeof response.data === 'string'
+      ? response.data
+      : JSON.stringify(response.data);
+    throw new Error(`PandaDoc API returned HTTP ${response.status}: ${body.slice(0, 1000)}`);
+  }
 
   return response.data;
 }
