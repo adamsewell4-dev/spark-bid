@@ -14,7 +14,7 @@ interface DiscoveryCall {
   clientName: string;
   projectDescription: string;
   callDate: string;
-  speakers: { speaker_id: string; name: string }[];
+  participants: string[];
   projectId: string | null;
   status: string | null;
 }
@@ -254,7 +254,7 @@ export function CommercialProposals() {
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5 truncate">{call.projectDescription}</p>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      {call.callDate} · {call.speakers.map((s) => s.name).join(', ')}
+                      {call.callDate}{call.participants.length > 0 ? ` · ${call.participants.join(', ')}` : ''}
                     </p>
                   </div>
 

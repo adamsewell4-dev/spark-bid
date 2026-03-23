@@ -64,8 +64,8 @@ export interface FirefliesTranscriptSummary {
   title: string;
   date: number;           // Unix timestamp in ms
   participants: string[]; // Array of participant email addresses
-  speakers: FirefliesSpeaker[];
-  summary: FirefliesSummary | null;
+  speakers?: FirefliesSpeaker[];
+  summary?: FirefliesSummary | null;
 }
 
 /** Full transcript with sentences, returned by the single-record query */
@@ -83,7 +83,7 @@ export interface DiscoveryCall {
   clientName: string;
   projectDescription: string;
   callDate: string;       // ISO 8601 date string YYYY-MM-DD
-  speakers: FirefliesSpeaker[];
+  participants: string[]; // Email addresses
 }
 
 /**
@@ -121,17 +121,31 @@ async function firefliesQuery<T>(
   query: string,
   variables: Record<string, unknown> = {}
 ): Promise<T> {
-  const response = await axios.post<{ data: T; errors?: { message: string }[] }>(
-    FIREFLIES_ENDPOINT,
-    { query, variables },
-    {
-      headers: {
-        Authorization: `Bearer ${config.firefliesApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      timeout: 30_000,
-    }
-  );
+  let response;
+  try {
+    response = await axios.post<{ data: T; errors?: { message: string }[] }>(
+      FIREFLIES_ENDPOINT,
+      { query, variables },
+      {
+        headers: {
+          Authorization: `Bearer ${config.firefliesApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 30_000,
+        // Don't throw on 4xx so we can read the body for diagnostics
+        validateStatus: () => true,
+      }
+    );
+  } catch (err) {
+    throw new Error(`Fireflies network error: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
+  if (response.status !== 200) {
+    const body = typeof response.data === 'string'
+      ? response.data
+      : JSON.stringify(response.data);
+    throw new Error(`Fireflies API returned HTTP ${response.status}: ${body.slice(0, 500)}`);
+  }
 
   if (response.data.errors?.length) {
     throw new Error(
@@ -201,10 +215,6 @@ export async function fetchDiscoveryCalls(limit = 50): Promise<DiscoveryCall[]> 
         title
         date
         participants
-        speakers {
-          speaker_id
-          name
-        }
       }
     }
   `;
@@ -230,7 +240,7 @@ export async function fetchDiscoveryCalls(limit = 50): Promise<DiscoveryCall[]> 
       clientName: parsed.clientName,
       projectDescription: parsed.projectDescription,
       callDate: parsed.callDate,
-      speakers: t.speakers ?? [],
+      participants: t.participants ?? [],
     });
   }
 
