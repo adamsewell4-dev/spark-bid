@@ -38,7 +38,7 @@ export type PaymentSchedule = 'option_a' | 'option_b' | null;
 
 /** Speaker record from Fireflies (has the human-readable name) */
 export interface FirefliesSpeaker {
-  speaker_id: string;
+  id: string;
   name: string;
 }
 
@@ -266,7 +266,7 @@ export async function fetchTranscriptById(transcriptId: string): Promise<Firefli
         date
         participants
         speakers {
-          speaker_id
+          id
           name
         }
         sentences {
