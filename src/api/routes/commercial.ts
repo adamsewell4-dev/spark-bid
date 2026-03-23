@@ -18,12 +18,16 @@ import {
   fetchAndExtractBrief,
   type ProjectBrief,
 } from '../../commercial/fireflies.js';
+import { generateCoverLetter } from '../../commercial/coverLetter.js';
+import { createProposalDocument, getDocumentStatus, pandaDocEditorUrl } from '../../commercial/pandadoc.js';
 import {
   upsertCommercialProject,
   getCommercialProject,
   listCommercialProjects,
   updateCommercialProjectStatus,
   getCommercialProjectByTranscript,
+  insertProposalVersion,
+  listProposalVersions,
 } from '../../db/index.js';
 import { config } from '../../config.js';
 
@@ -219,4 +223,94 @@ commercialRouter.post('/projects/:id/confirm', (req, res) => {
   updateCommercialProjectStatus(existing.id, 'brief_confirmed');
   const updated = getCommercialProject(existing.id);
   return res.json({ success: true, data: updated });
+});
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/commercial/projects/:id/generate
+// Generate cover letter + PandaDoc proposal from confirmed brief
+// ─────────────────────────────────────────────────────────────
+
+commercialRouter.post('/projects/:id/generate', async (req, res) => {
+  const existing = getCommercialProject(req.params.id);
+  if (!existing) {
+    return res.json({ success: false, error: 'Project not found.' });
+  }
+
+  if (!['brief_confirmed', 'draft'].includes(existing.status)) {
+    return res.json({
+      success: false,
+      error: `Brief must be confirmed before generating a proposal. Current status: "${existing.status}".`,
+    });
+  }
+
+  if (!config.pandadocApiKey) {
+    return res.json({ success: false, error: 'PandaDoc API key not configured.' });
+  }
+
+  if (!config.anthropicApiKey) {
+    return res.json({ success: false, error: 'Anthropic API key not configured.' });
+  }
+
+  try {
+    // Mark as generating
+    updateCommercialProjectStatus(existing.id, 'generating');
+
+    // Step 1: Generate cover letter via Claude
+    const coverLetter = await generateCoverLetter(existing);
+
+    // Step 2: Create PandaDoc document
+    const doc = await createProposalDocument(existing, coverLetter);
+
+    // Step 3: Determine version number
+    const existingVersions = listProposalVersions(existing.id);
+    const versionNumber = existingVersions.length + 1;
+
+    // Step 4: Save version record
+    insertProposalVersion({
+      id: randomUUID(),
+      commercial_project_id: existing.id,
+      pandadoc_document_id: doc.id,
+      version_number: versionNumber,
+      status: doc.status,
+      needs_review: 0,
+    });
+
+    // Step 5: Update project with PandaDoc document ID and draft status
+    upsertCommercialProject({
+      ...existing,
+      pandadoc_document_id: doc.id,
+      pandadoc_status: doc.status,
+      status: 'draft',
+    });
+
+    const updated = getCommercialProject(existing.id);
+    return res.json({
+      success: true,
+      data: {
+        project: updated,
+        pandadoc_document_id: doc.id,
+        pandadoc_url: pandaDocEditorUrl(doc.id),
+        version_number: versionNumber,
+      },
+    });
+  } catch (err) {
+    // Roll back status on failure
+    updateCommercialProjectStatus(existing.id, existing.status);
+    const message = err instanceof Error ? err.message : String(err);
+    return res.json({ success: false, error: `Proposal generation failed: ${message}` });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/commercial/projects/:id/versions
+// List all proposal versions for a project
+// ─────────────────────────────────────────────────────────────
+
+commercialRouter.get('/projects/:id/versions', (req, res) => {
+  const existing = getCommercialProject(req.params.id);
+  if (!existing) {
+    return res.json({ success: false, error: 'Project not found.' });
+  }
+  const versions = listProposalVersions(existing.id);
+  return res.json({ success: true, data: versions });
 });

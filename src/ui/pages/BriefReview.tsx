@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Save, CheckCircle, Plus, X, ChevronDown, ExternalLink,
+  ArrowLeft, Save, CheckCircle, Plus, X, ChevronDown, ExternalLink, FileText, Sparkles,
 } from 'lucide-react';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { authFetch } from '../lib/auth';
@@ -153,6 +153,8 @@ export function BriefReview() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [pandadocUrl, setPandadocUrl] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -227,6 +229,25 @@ export function BriefReview() {
       setError(err instanceof Error ? err.message : 'Save failed');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleGenerate() {
+    if (!projectId) return;
+    setGenerating(true);
+    setError(null);
+    try {
+      const res = await authFetch(`/api/commercial/projects/${projectId}/generate`, {
+        method: 'POST',
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error ?? 'Generation failed');
+      setPandadocUrl(json.data.pandadoc_url as string);
+      void loadProject();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Generation failed');
+    } finally {
+      setGenerating(false);
     }
   }
 
@@ -453,8 +474,29 @@ export function BriefReview() {
           </div>
         </div>
 
+        {/* PandaDoc success banner */}
+        {pandadocUrl && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle size={20} className="text-emerald-500 flex-shrink-0" />
+              <div>
+                <p className="font-semibold text-emerald-800 text-sm">Proposal created in PandaDoc</p>
+                <p className="text-emerald-600 text-xs mt-0.5">Review and fill in pricing before sending to the client.</p>
+              </div>
+            </div>
+            <a
+              href={pandadocUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors flex-shrink-0"
+            >
+              Open in PandaDoc <ExternalLink size={13} />
+            </a>
+          </div>
+        )}
+
         {/* External links (if connected to Saturation / PandaDoc) */}
-        {(project?.saturation_project_id || project?.pandadoc_document_id) && (
+        {!pandadocUrl && (project?.saturation_project_id || project?.pandadoc_document_id) && (
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex gap-4">
             {project.saturation_project_id && (
               <a
@@ -521,6 +563,23 @@ export function BriefReview() {
                 <><LoadingSpinner size={14} /> Confirming…</>
               ) : (
                 <><CheckCircle size={14} /> Confirm Brief</>
+              )}
+            </button>
+          )}
+
+          {isConfirmed && (
+            <button
+              type="button"
+              onClick={() => void handleGenerate()}
+              disabled={generating}
+              className="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors shadow-sm"
+            >
+              {generating ? (
+                <><LoadingSpinner size={14} /> Generating… (30–60s)</>
+              ) : project?.pandadoc_document_id ? (
+                <><FileText size={14} /> Regenerate Proposal</>
+              ) : (
+                <><Sparkles size={14} /> Generate Proposal</>
               )}
             </button>
           )}
