@@ -4,7 +4,7 @@ import {
   ArrowLeft, Save, CheckCircle, Plus, X, ChevronDown, ExternalLink, FileText, Sparkles, RefreshCw, Download,
 } from 'lucide-react';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import { authFetch } from '../lib/auth';
+import { authFetch, railwayFetch } from '../lib/auth';
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -245,7 +245,7 @@ export function BriefReview() {
     setGenerating(true);
     setError(null);
     try {
-      const res = await authFetch(`/api/commercial/projects/${projectId}/generate`, {
+      const res = await railwayFetch(`/api/commercial/projects/${projectId}/generate`, {
         method: 'POST',
       });
       const json = await res.json();
@@ -264,7 +264,7 @@ export function BriefReview() {
     setReanalyzing(true);
     setError(null);
     try {
-      const res = await authFetch(
+      const res = await railwayFetch(
         `/api/commercial/calls/${project.fireflies_transcript_id}/extract?force=true`,
         { method: 'POST' }
       );
@@ -283,7 +283,7 @@ export function BriefReview() {
     setDownloadingEstimate(true);
     setError(null);
     try {
-      const res = await authFetch(`/api/commercial/projects/${projectId}/estimate`);
+      const res = await railwayFetch(`/api/commercial/projects/${projectId}/estimate`);
       if (!res.ok) {
         const json = await res.json().catch(() => ({ error: 'Download failed' }));
         throw new Error((json as { error?: string }).error ?? 'Download failed');
