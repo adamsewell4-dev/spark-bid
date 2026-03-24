@@ -341,6 +341,7 @@ export interface CommercialProjectRow {
   cover_letter_seeds: string | null;    // JSON array
   case_study_match: string | null;
   payment_schedule: string | null;
+  discovery_notes: string | null;
   status: string;
   saturation_project_id: string | null;
   pandadoc_document_id: string | null;
@@ -362,6 +363,7 @@ export interface UpsertCommercialProjectInput {
   cover_letter_seeds?: string | null;
   case_study_match?: string | null;
   payment_schedule?: string | null;
+  discovery_notes?: string | null;
   status?: string;
   saturation_project_id?: string | null;
   pandadoc_document_id?: string | null;
@@ -384,12 +386,12 @@ export function upsertCommercialProject(input: UpsertCommercialProjectInput): vo
     INSERT INTO commercial_projects (
       id, fireflies_transcript_id, client_name, project_type, project_description,
       deliverables, timeline, budget_signal, tone, cover_letter_seeds,
-      case_study_match, payment_schedule, status,
+      case_study_match, payment_schedule, discovery_notes, status,
       saturation_project_id, pandadoc_document_id, pandadoc_status, updated_at
     ) VALUES (
       @id, @fireflies_transcript_id, @client_name, @project_type, @project_description,
       @deliverables, @timeline, @budget_signal, @tone, @cover_letter_seeds,
-      @case_study_match, @payment_schedule, @status,
+      @case_study_match, @payment_schedule, @discovery_notes, @status,
       @saturation_project_id, @pandadoc_document_id, @pandadoc_status,
       strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
     )
@@ -404,6 +406,7 @@ export function upsertCommercialProject(input: UpsertCommercialProjectInput): vo
       cover_letter_seeds      = excluded.cover_letter_seeds,
       case_study_match        = excluded.case_study_match,
       payment_schedule        = excluded.payment_schedule,
+      discovery_notes         = excluded.discovery_notes,
       status                  = excluded.status,
       saturation_project_id   = excluded.saturation_project_id,
       pandadoc_document_id    = excluded.pandadoc_document_id,
@@ -424,6 +427,7 @@ export function upsertCommercialProject(input: UpsertCommercialProjectInput): vo
     cover_letter_seeds: input.cover_letter_seeds ?? null,
     case_study_match: input.case_study_match ?? null,
     payment_schedule: input.payment_schedule ?? null,
+    discovery_notes: input.discovery_notes ?? null,
     status: input.status ?? 'brief_pending',
     saturation_project_id: input.saturation_project_id ?? null,
     pandadoc_document_id: input.pandadoc_document_id ?? null,

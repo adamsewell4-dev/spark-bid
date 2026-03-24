@@ -35,6 +35,22 @@ function migrate(): void {
     console.error(`[${new Date().toISOString()}] [migrate] Migration failed — ${message}`);
     process.exit(1);
   }
+
+  // Additive column migrations — safe to run repeatedly on existing databases
+  const addColumns: { table: string; column: string; definition: string }[] = [
+    { table: 'commercial_projects', column: 'discovery_notes', definition: 'TEXT' },
+  ];
+
+  for (const { table, column, definition } of addColumns) {
+    const exists = (db.prepare(
+      `SELECT COUNT(*) as n FROM pragma_table_info(?) WHERE name = ?`
+    ).get(table, column) as { n: number }).n > 0;
+
+    if (!exists) {
+      db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+      console.log(`[${new Date().toISOString()}] [migrate] Added column ${table}.${column}`);
+    }
+  }
 }
 
 migrate();

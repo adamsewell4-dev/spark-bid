@@ -173,6 +173,7 @@ commercialRouter.put('/projects/:id', (req, res) => {
     cover_letter_seeds: string[];
     case_study_match: string;
     payment_schedule: string;
+    discovery_notes: string;
   }>;
 
   upsertCommercialProject({
@@ -192,6 +193,7 @@ commercialRouter.put('/projects/:id', (req, res) => {
       : existing.cover_letter_seeds,
     case_study_match: body.case_study_match ?? existing.case_study_match,
     payment_schedule: body.payment_schedule ?? existing.payment_schedule,
+    discovery_notes: body.discovery_notes ?? existing.discovery_notes,
     status: existing.status,
     saturation_project_id: existing.saturation_project_id,
     pandadoc_document_id: existing.pandadoc_document_id,

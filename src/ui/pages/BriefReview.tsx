@@ -23,6 +23,7 @@ interface CommercialProject {
   cover_letter_seeds: string | null;   // JSON array
   case_study_match: string | null;
   payment_schedule: string | null;
+  discovery_notes: string | null;
   status: string;
   pandadoc_document_id: string | null;
   pandadoc_status: string | null;
@@ -169,6 +170,7 @@ export function BriefReview() {
   const [coverLetterSeeds, setCoverLetterSeeds] = useState<string[]>([]);
   const [caseStudyMatch, setCaseStudyMatch] = useState('');
   const [paymentSchedule, setPaymentSchedule] = useState<string>('');
+  const [discoveryNotes, setDiscoveryNotes] = useState('');
 
   const loadProject = useCallback(async () => {
     if (!projectId) return;
@@ -191,6 +193,7 @@ export function BriefReview() {
       setCoverLetterSeeds(p.cover_letter_seeds ? (JSON.parse(p.cover_letter_seeds) as string[]) : []);
       setCaseStudyMatch(p.case_study_match ?? '');
       setPaymentSchedule(p.payment_schedule ?? '');
+      setDiscoveryNotes(p.discovery_notes ?? '');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load project');
     } finally {
@@ -219,6 +222,7 @@ export function BriefReview() {
           cover_letter_seeds: coverLetterSeeds,
           case_study_match: caseStudyMatch,
           payment_schedule: paymentSchedule || null,
+          discovery_notes: discoveryNotes || null,
         }),
       });
       const json = await res.json();
@@ -424,6 +428,24 @@ export function BriefReview() {
               tags={coverLetterSeeds}
               onChange={setCoverLetterSeeds}
               placeholder="e.g. 'storytelling that converts'"
+            />
+          </div>
+        </div>
+
+        {/* ── Discovery Notes ── */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5">
+          <SectionLabel>Discovery Notes</SectionLabel>
+          <div>
+            <FieldLabel>Notes from the Discovery Call</FieldLabel>
+            <p className="text-xs text-gray-400 mb-2">
+              Write a brief overview of what was discussed — production context, client goals, logistics, anything not captured above. This gets cross-referenced with the transcript to sharpen the proposal copy.
+            </p>
+            <textarea
+              value={discoveryNotes}
+              onChange={(e) => setDiscoveryNotes(e.target.value)}
+              rows={5}
+              placeholder="e.g. 2-day studio shoot at their Charlotte facility, cross-functional crew covering photography and video simultaneously, primary goal is eCommerce PDPs for spring launch, client emphasized speed of delivery…"
+              className={`${inputClass} resize-none`}
             />
           </div>
         </div>

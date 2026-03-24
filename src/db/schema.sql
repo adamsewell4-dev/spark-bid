@@ -114,6 +114,7 @@ CREATE TABLE IF NOT EXISTS commercial_projects (
   cover_letter_seeds      TEXT,                  -- JSON array of key phrases from transcript
   case_study_match        TEXT,                  -- Suggested past performance references
   payment_schedule        TEXT,                  -- 'option_a' | 'option_b'
+  discovery_notes         TEXT,                  -- Free-text notes from the person on the discovery call
   status                  TEXT NOT NULL DEFAULT 'brief_pending',
     -- brief_pending → brief_confirmed → generating → draft → sent → revised → signed
   saturation_project_id   TEXT,

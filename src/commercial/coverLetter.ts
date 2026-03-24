@@ -112,7 +112,8 @@ Client: ${project.client_name}
 Project Type: ${projectTypeLabel}
 Project Description: ${project.project_description ?? 'Not specified'}
 Tone / Creative Direction: ${project.tone ?? 'Not specified'}
-${seeds.length > 0 ? `\nKey themes and language from the discovery call:\n${seeds.map((s) => `- "${s}"`).join('\n')}` : ''}
+${project.discovery_notes ? `\nDiscovery call notes:\n${project.discovery_notes}` : ''}
+${seeds.length > 0 ? `\nKey language and phrases from the call:\n${seeds.map((s) => `- "${s}"`).join('\n')}` : ''}
 
 Requirements:
 - Begin with: Dear ${project.client_name} Team,
@@ -173,6 +174,7 @@ Client: ${project.client_name}
 Project Type: ${projectTypeLabel}
 Description: ${project.project_description ?? 'Not specified'}
 Deliverables: ${deliverables.length > 0 ? deliverables.join(', ') : 'Not specified'}
+${project.discovery_notes ? `Discovery notes: ${project.discovery_notes}` : ''}
 
 Examples of good titles: "Residential Photography", "Product Launch Campaign", "Cinematic Storytelling", "Broadcast Comedy Spot", "Training Video Series"
 
@@ -211,6 +213,7 @@ Client: ${project.client_name}
 Project Type: ${projectTypeLabel}
 Raw Description: ${project.project_description ?? 'Not specified'}
 Deliverables: ${deliverables.length > 0 ? deliverables.join(', ') : 'To be confirmed'}
+${project.discovery_notes ? `Discovery notes: ${project.discovery_notes}` : ''}
 
 Rules:
 - 1 to 2 sentences maximum
