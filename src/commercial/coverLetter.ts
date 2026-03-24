@@ -2,23 +2,33 @@
  * src/commercial/coverLetter.ts
  *
  * Generates a cover letter for a commercial proposal using the confirmed
- * project brief. The letter is a soft welcome and overview — not a deep
- * dive into specifics. Tone is Spartan: clear, direct, no emotional flair.
+ * project brief plus the full DSS company knowledge base.
  *
- * Structure: 3 paragraphs
- *   1. Warm welcome and acknowledgment of what was discussed
- *   2. Brief overview of the project and DSS's fit
- *   3. Forward-looking close / next step
+ * Knowledge base: all .md, .txt, and .pdf files in data/company-profile/
+ * are loaded at generation time and injected into the system prompt so
+ * Claude understands DSS's voice, services, and positioning.
  *
- * Output: starts with "Dear [Client] Team," — no date, no signature block
- * (both already present in the PandaDoc template).
+ * Cover letter structure: 4 paragraphs
+ *   1. Warm acknowledgment of the conversation and the client's world
+ *   2. What the client is working toward and why it matters
+ *   3. Why DSS is the right fit for this specific project
+ *   4. Simple forward-looking close
  *
- * Rules: no em dashes, no clichés, no elaborate language.
+ * Tone: Spartan. Direct, grounded, professional. No em dashes. No fluff.
+ * Output: starts with salutation, no date, no signature block.
  */
 
+import { readdir, readFile } from 'node:fs/promises';
+import { extname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
+import pdfParse from 'pdf-parse';
 import Anthropic from '@anthropic-ai/sdk';
 import { config } from '../config.js';
 import type { CommercialProjectRow } from '../db/index.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PROFILE_DIR = join(__dirname, '../../data/company-profile');
 
 const PAYMENT_SCHEDULE_LABELS: Record<string, string> = {
   option_a: '50% at kickoff, 25% at creative development completion, 25% at final delivery',
@@ -31,6 +41,49 @@ const PROJECT_TYPE_LABELS: Record<string, string> = {
   corporate_story: 'corporate brand story',
   training_video: 'training and educational video',
 };
+
+// ─────────────────────────────────────────────────────────────
+// Knowledge base loader
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Load all .md, .txt, and .pdf files from data/company-profile/.
+ * Returns a single concatenated string for injection into the system prompt.
+ */
+async function loadCompanyKnowledgeBase(): Promise<string> {
+  let files: string[];
+  try {
+    files = await readdir(PROFILE_DIR);
+  } catch {
+    return ''; // directory doesn't exist yet
+  }
+
+  const sections: string[] = [];
+
+  for (const file of files.sort()) {
+    const ext = extname(file).toLowerCase();
+    const filePath = join(PROFILE_DIR, file);
+
+    try {
+      if (ext === '.md' || ext === '.txt') {
+        const text = await readFile(filePath, 'utf-8');
+        sections.push(`--- ${file} ---\n${text.trim()}`);
+      } else if (ext === '.pdf') {
+        const buffer = await readFile(filePath);
+        const parsed = await pdfParse(buffer);
+        sections.push(`--- ${file} ---\n${parsed.text.trim()}`);
+      }
+    } catch {
+      // skip unreadable files silently
+    }
+  }
+
+  return sections.join('\n\n');
+}
+
+// ─────────────────────────────────────────────────────────────
+// Cover letter generation
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Generate a cover letter draft for the given commercial project.
@@ -45,15 +98,15 @@ export async function generateCoverLetter(project: CommercialProjectRow): Promis
 
   const projectTypeLabel = PROJECT_TYPE_LABELS[project.project_type ?? ''] ?? 'video production';
 
-  const systemPrompt = `You are Daniel Dougherty, Director of Partnerships at Digital Spark Studios (DSS), a video production company based in Charlotte, NC. You write proposal cover letters with a Spartan tone: clear, direct, and professional. Never emotional, never elaborate. No filler words, no superlatives, no clichés. Never use em dashes.
+  const knowledgeBase = await loadCompanyKnowledgeBase();
 
-Digital Spark Studios:
-- Founded 2015, Charlotte, NC
-- Leadership: Adam Sewell (Executive Producer / CEO), Joshua Hieber (Executive Director)
-- End-to-end video production from concept through delivery
-- 50+ years combined team experience`;
+  const systemPrompt = `You are Daniel Dougherty, Director of Partnerships at Digital Spark Studios. You write proposal cover letters that are direct, grounded, and professional. Spartan tone only: no em dashes, no emotional flourishes, no filler language, no clichés.
 
-  const userPrompt = `Write a cover letter for this proposal. The letter is a soft welcome and high-level overview only. Do not go deep into project specifics or deliverables. Reflect back what was discussed in the discovery conversation in a natural, grounded way.
+Use the company knowledge base below to inform your understanding of DSS's voice, services, differentiators, and the language the team uses. Write from genuine familiarity with the company.
+
+${knowledgeBase ? `DIGITAL SPARK STUDIOS KNOWLEDGE BASE:\n${knowledgeBase}` : ''}`;
+
+  const userPrompt = `Write a cover letter for the following proposal. This is a soft welcome and overview — not a deep dive into deliverables or pricing. Reflect back what was discussed in the discovery conversation and frame why DSS is the right partner.
 
 Client: ${project.client_name}
 Project Type: ${projectTypeLabel}
@@ -61,21 +114,21 @@ Project Description: ${project.project_description ?? 'Not specified'}
 Tone / Creative Direction: ${project.tone ?? 'Not specified'}
 ${seeds.length > 0 ? `\nKey themes and language from the discovery call:\n${seeds.map((s) => `- "${s}"`).join('\n')}` : ''}
 
-Format rules:
+Requirements:
 - Begin with: Dear ${project.client_name} Team,
-- Then a blank line
-- Write 3 short paragraphs separated by blank lines
-- Paragraph 1: Warm, grounded acknowledgment of the conversation and the opportunity
-- Paragraph 2: Brief overview of the project scope and why DSS is the right fit
-- Paragraph 3: Simple forward-looking close, one to two sentences
-- No date, no signature, no sign-off of any kind at the end
+- Follow with a blank line
+- Write 4 paragraphs, each separated by a blank line
+- Paragraph 1: Acknowledge the conversation and the client's world in a warm but grounded way
+- Paragraph 2: Speak to what they are working toward and why it matters
+- Paragraph 3: Explain why DSS is the right fit for this specific project — draw on real capabilities and experience
+- Paragraph 4: A brief, forward-looking close. One to two sentences.
+- Target 400 to 500 words total
 - No em dashes anywhere
-- No elaborate language, no emotional flair
-- Keep it under 200 words total`;
+- No date, no signature, no sign-off of any kind`;
 
   const message = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
-    max_tokens: 600,
+    max_tokens: 1000,
     system: systemPrompt,
     messages: [{ role: 'user', content: userPrompt }],
   });
@@ -83,13 +136,17 @@ Format rules:
   const text =
     message.content[0]?.type === 'text' ? message.content[0].text.trim() : '';
 
-  // Normalize line endings and ensure paragraphs are separated clearly
   return text
-    .replace(/—/g, '-')          // strip any em dashes Claude snuck in
+    .replace(/\u2014/g, '-')     // em dash → hyphen
+    .replace(/\u2013/g, '-')     // en dash → hyphen
     .replace(/\r\n/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')  // collapse excess blank lines
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
+
+// ─────────────────────────────────────────────────────────────
+// Payment schedule helper
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Build the payment schedule text for use in a PandaDoc document.
