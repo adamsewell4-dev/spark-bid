@@ -18,7 +18,14 @@ import {
   fetchAndExtractBrief,
   type ProjectBrief,
 } from '../../commercial/fireflies.js';
-import { generateCoverLetter, generateProjectDescription, generateScopeTitle } from '../../commercial/coverLetter.js';
+import {
+  generateCoverLetter,
+  generateProjectDescription,
+  generateScopeTitle,
+  generateInvestmentHeadline,
+  generateInvestmentSubheading,
+  generateInvestmentBody,
+} from '../../commercial/coverLetter.js';
 import { createProposalDocument, getDocumentStatus, pandaDocEditorUrl } from '../../commercial/pandadoc.js';
 import {
   upsertCommercialProject,
@@ -268,14 +275,17 @@ commercialRouter.post('/projects/:id/generate', async (req, res) => {
     updateCommercialProjectStatus(existing.id, 'generating');
 
     // Step 1: Generate all AI content in parallel
-    const [coverLetter, projectDescription, scopeTitle] = await Promise.all([
+    const [coverLetter, projectDescription, scopeTitle, investmentHeadline, investmentSubheading, investmentBody] = await Promise.all([
       generateCoverLetter(existing),
       generateProjectDescription(existing),
       generateScopeTitle(existing),
+      generateInvestmentHeadline(existing),
+      generateInvestmentSubheading(existing),
+      generateInvestmentBody(existing),
     ]);
 
     // Step 2: Create PandaDoc document
-    const doc = await createProposalDocument(existing, coverLetter, projectDescription, scopeTitle);
+    const doc = await createProposalDocument(existing, coverLetter, projectDescription, scopeTitle, investmentHeadline, investmentSubheading, investmentBody);
 
     // Step 3: Determine version number
     const existingVersions = listProposalVersions(existing.id);

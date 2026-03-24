@@ -110,7 +110,10 @@ export async function createProposalDocument(
   project: CommercialProjectRow,
   coverLetterText: string,
   projectDescription: string,
-  scopeTitle: string
+  scopeTitle: string,
+  investmentHeadline: string,
+  investmentSubheading: string,
+  investmentBody: string
 ): Promise<PandaDocDocument> {
   const projectTypeLabel = project.project_type
     ? project.project_type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
@@ -144,8 +147,11 @@ export async function createProposalDocument(
       { name: 'Client.FirstName',    value: first },
       { name: 'Client.LastName',     value: last },
       { name: 'cover.letter',        value: coverLetterText },
-      { name: 'project.description', value: projectDescription },
-      { name: 'scope.title',         value: scopeTitle },
+      { name: 'project.description',    value: projectDescription },
+      { name: 'scope.title',            value: scopeTitle },
+      { name: 'investment.headline',    value: investmentHeadline },
+      { name: 'investment.subheading',  value: investmentSubheading },
+      { name: 'investment.body',        value: investmentBody },
       { name: 'deliverables.list',   value: deliverablesList },
       { name: 'payment.schedule',    value: paymentText },
     ],

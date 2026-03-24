@@ -238,6 +238,109 @@ Rules:
 }
 
 // ─────────────────────────────────────────────────────────────
+// Investment page generators
+// ─────────────────────────────────────────────────────────────
+
+function buildInvestmentContext(project: CommercialProjectRow): string {
+  const deliverables: string[] = project.deliverables
+    ? (JSON.parse(project.deliverables) as string[])
+    : [];
+  const projectTypeLabel = PROJECT_TYPE_LABELS[project.project_type ?? ''] ?? 'video production';
+  return [
+    `Client: ${project.client_name}`,
+    `Project Type: ${projectTypeLabel}`,
+    `Deliverables: ${deliverables.length > 0 ? deliverables.join(', ') : 'To be confirmed'}`,
+    project.discovery_notes ? `Discovery notes: ${project.discovery_notes}` : '',
+    project.tone ? `Tone / Creative Direction: ${project.tone}` : '',
+  ].filter(Boolean).join('\n');
+}
+
+/**
+ * Large bold left-column headline for the Investment page.
+ * One punchy sentence about DSS's approach to this specific project.
+ * Example: "Strategically Executed In A Controlled Studio Environment To Optimize Efficiency."
+ */
+export async function generateInvestmentHeadline(project: CommercialProjectRow): Promise<string> {
+  const client = new Anthropic({ apiKey: config.anthropicApiKey });
+  const context = buildInvestmentContext(project);
+
+  const message = await client.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 60,
+    system: 'You write bold, confident one-sentence headlines for the investment page of video production proposals at Digital Spark Studios. The headline appears large on the left side of the page. It speaks to how DSS will execute this specific project. No em dashes. No quotes. Return only the headline.',
+    messages: [{
+      role: 'user',
+      content: `Write a single bold headline sentence about DSS's approach to executing this project. It should feel strategic and confident — like a statement of intent. 10 to 16 words.\n\n${context}`,
+    }],
+  });
+
+  const text = message.content[0]?.type === 'text' ? message.content[0].text.trim() : '';
+  return text.replace(/\u2014/g, '-').replace(/\u2013/g, '-').replace(/^["']|["']$/g, '').trim();
+}
+
+/**
+ * Right-column subheading for the Investment page.
+ * Short, confident title for the body copy block.
+ * Example: "Built for Scale, Executed with Precision"
+ */
+export async function generateInvestmentSubheading(project: CommercialProjectRow): Promise<string> {
+  const client = new Anthropic({ apiKey: config.anthropicApiKey });
+  const context = buildInvestmentContext(project);
+
+  const message = await client.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 30,
+    system: 'You write short subheadings for the investment page of video production proposals at Digital Spark Studios. 4 to 7 words. Confident and specific to the project. No em dashes. Return only the subheading.',
+    messages: [{
+      role: 'user',
+      content: `Write a 4-7 word subheading for the investment page body copy. Examples: "Built for Scale, Executed with Precision", "Purpose-Built for This Production", "End-to-End Ownership, Start to Finish".\n\n${context}`,
+    }],
+  });
+
+  const text = message.content[0]?.type === 'text' ? message.content[0].text.trim() : '';
+  return text.replace(/\u2014/g, '-').replace(/\u2013/g, '-').replace(/^["']|["']$/g, '').trim();
+}
+
+/**
+ * Right-column body copy for the Investment page.
+ * 2 short paragraphs: why DSS is built for this project, and how the team is structured to deliver.
+ * Mentions the client by name. Spartan tone. No em dashes.
+ */
+export async function generateInvestmentBody(project: CommercialProjectRow): Promise<string> {
+  const client = new Anthropic({ apiKey: config.anthropicApiKey });
+  const context = buildInvestmentContext(project);
+  const knowledgeBase = await loadCompanyKnowledgeBase();
+
+  const systemPrompt = `You write the investment page body copy for video production proposals at Digital Spark Studios. Spartan tone: direct, confident, professional. No em dashes. No filler. Reference the client by name.
+
+${knowledgeBase ? `DIGITAL SPARK STUDIOS KNOWLEDGE BASE:\n${knowledgeBase}` : ''}`;
+
+  const message = await client.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 300,
+    system: systemPrompt,
+    messages: [{
+      role: 'user',
+      content: `Write 2 short paragraphs for the investment section body copy. Separated by a blank line.
+
+Paragraph 1: Why DSS is purpose-built for a production of this scope — reference their experience, team structure, and workflow as they relate to this specific project and client.
+Paragraph 2: How the project will be led and managed — reference the Executive Producer (Adam Sewell) and Executive Director (Joshua Hieber) and the cross-functional approach DSS brings.
+
+Rules: mention the client by name in paragraph 1. No em dashes. No sign-off. Under 120 words total.
+
+${context}`,
+    }],
+  });
+
+  const text = message.content[0]?.type === 'text' ? message.content[0].text.trim() : '';
+  return text
+    .replace(/\u2014/g, '-')
+    .replace(/\u2013/g, '-')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+// ─────────────────────────────────────────────────────────────
 // Payment schedule helper
 // ─────────────────────────────────────────────────────────────
 
