@@ -109,7 +109,8 @@ function parseClientName(fullName: string): { first: string; last: string } {
 export async function createProposalDocument(
   project: CommercialProjectRow,
   coverLetterText: string,
-  projectDescription: string
+  projectDescription: string,
+  scopeTitle: string
 ): Promise<PandaDocDocument> {
   const projectTypeLabel = project.project_type
     ? project.project_type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
@@ -144,6 +145,7 @@ export async function createProposalDocument(
       { name: 'Client.LastName',     value: last },
       { name: 'cover.letter',        value: coverLetterText },
       { name: 'project.description', value: projectDescription },
+      { name: 'scope.title',         value: scopeTitle },
       { name: 'deliverables.list',   value: deliverablesList },
       { name: 'payment.schedule',    value: paymentText },
     ],

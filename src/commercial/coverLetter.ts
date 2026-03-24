@@ -149,6 +149,44 @@ Requirements:
 // ─────────────────────────────────────────────────────────────
 
 /**
+ * Generate a 2-3 word scope title for the deliverables section.
+ * Examples: "Residential Photography", "Product Launch Campaign", "Broadcast Comedy Spot"
+ */
+export async function generateScopeTitle(project: CommercialProjectRow): Promise<string> {
+  const client = new Anthropic({ apiKey: config.anthropicApiKey });
+
+  const deliverables: string[] = project.deliverables
+    ? (JSON.parse(project.deliverables) as string[])
+    : [];
+
+  const projectTypeLabel = PROJECT_TYPE_LABELS[project.project_type ?? ''] ?? 'video production';
+
+  const message = await client.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 20,
+    system: 'You generate concise, creative 2-3 word titles for the deliverables section of video production proposals. Return only the title — nothing else.',
+    messages: [{
+      role: 'user',
+      content: `Generate a 2-3 word scope title for this project.
+
+Client: ${project.client_name}
+Project Type: ${projectTypeLabel}
+Description: ${project.project_description ?? 'Not specified'}
+Deliverables: ${deliverables.length > 0 ? deliverables.join(', ') : 'Not specified'}
+
+Examples of good titles: "Residential Photography", "Product Launch Campaign", "Cinematic Storytelling", "Broadcast Comedy Spot", "Training Video Series"
+
+Return only the title, no punctuation.`,
+    }],
+  });
+
+  const text =
+    message.content[0]?.type === 'text' ? message.content[0].text.trim() : '';
+
+  return text.replace(/\u2014/g, '-').replace(/\u2013/g, '-').trim();
+}
+
+/**
  * Generate a polished 1-2 sentence project description for the proposal.
  * This sits just above the deliverables table — a brief, creative summary
  * of the scope of work, neatly packaged.
