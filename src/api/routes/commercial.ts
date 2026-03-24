@@ -27,6 +27,7 @@ import {
   generateInvestmentBody,
 } from '../../commercial/coverLetter.js';
 import { createProposalDocument, getDocumentStatus, pandaDocEditorUrl } from '../../commercial/pandadoc.js';
+import { generateEstimateXlsx } from '../../commercial/estimateGenerator.js';
 import {
   upsertCommercialProject,
   getCommercialProject,
@@ -351,4 +352,31 @@ commercialRouter.get('/projects/:id/versions', (req, res) => {
   }
   const versions = listProposalVersions(existing.id);
   return res.json({ success: true, data: versions });
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/commercial/projects/:id/estimate
+// Generate and stream an XLSX production budget estimate
+// ─────────────────────────────────────────────────────────────
+
+commercialRouter.get('/projects/:id/estimate', async (req, res) => {
+  const existing = getCommercialProject(req.params.id);
+  if (!existing) {
+    return res.json({ success: false, error: 'Project not found.' });
+  }
+
+  if (!config.anthropicApiKey) {
+    return res.json({ success: false, error: 'Anthropic API key not configured.' });
+  }
+
+  try {
+    const buffer = await generateEstimateXlsx(existing);
+    const filename = `${existing.client_name.replace(/[^a-z0-9]/gi, '_')}_Estimate.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return res.json({ success: false, error: `Estimate generation failed: ${message}` });
+  }
 });

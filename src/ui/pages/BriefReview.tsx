@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Save, CheckCircle, Plus, X, ChevronDown, ExternalLink, FileText, Sparkles, RefreshCw,
+  ArrowLeft, Save, CheckCircle, Plus, X, ChevronDown, ExternalLink, FileText, Sparkles, RefreshCw, Download,
 } from 'lucide-react';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { authFetch } from '../lib/auth';
@@ -158,6 +158,7 @@ export function BriefReview() {
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [downloadingEstimate, setDownloadingEstimate] = useState(false);
   const [reanalyzing, setReanalyzing] = useState(false);
   const [pandadocUrl, setPandadocUrl] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -274,6 +275,30 @@ export function BriefReview() {
       setError(err instanceof Error ? err.message : 'Re-analysis failed');
     } finally {
       setReanalyzing(false);
+    }
+  }
+
+  async function handleDownloadEstimate() {
+    if (!projectId) return;
+    setDownloadingEstimate(true);
+    setError(null);
+    try {
+      const res = await authFetch(`/api/commercial/projects/${projectId}/estimate`);
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({ error: 'Download failed' }));
+        throw new Error((json as { error?: string }).error ?? 'Download failed');
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(project?.client_name ?? 'Estimate').replace(/[^a-z0-9]/gi, '_')}_Estimate.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Download failed');
+    } finally {
+      setDownloadingEstimate(false);
     }
   }
 
@@ -653,6 +678,21 @@ export function BriefReview() {
                 <><FileText size={14} /> Regenerate Proposal</>
               ) : (
                 <><Sparkles size={14} /> Generate Proposal</>
+              )}
+            </button>
+          )}
+
+          {isConfirmed && (
+            <button
+              type="button"
+              onClick={() => void handleDownloadEstimate()}
+              disabled={downloadingEstimate}
+              className="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors shadow-sm"
+            >
+              {downloadingEstimate ? (
+                <><LoadingSpinner size={14} /> Building Estimate…</>
+              ) : (
+                <><Download size={14} /> Download Estimate</>
               )}
             </button>
           )}
