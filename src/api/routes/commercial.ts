@@ -18,7 +18,7 @@ import {
   fetchAndExtractBrief,
   type ProjectBrief,
 } from '../../commercial/fireflies.js';
-import { generateCoverLetter } from '../../commercial/coverLetter.js';
+import { generateCoverLetter, generateProjectDescription } from '../../commercial/coverLetter.js';
 import { createProposalDocument, getDocumentStatus, pandaDocEditorUrl } from '../../commercial/pandadoc.js';
 import {
   upsertCommercialProject,
@@ -255,11 +255,14 @@ commercialRouter.post('/projects/:id/generate', async (req, res) => {
     // Mark as generating
     updateCommercialProjectStatus(existing.id, 'generating');
 
-    // Step 1: Generate cover letter via Claude
-    const coverLetter = await generateCoverLetter(existing);
+    // Step 1: Generate cover letter and project description in parallel
+    const [coverLetter, projectDescription] = await Promise.all([
+      generateCoverLetter(existing),
+      generateProjectDescription(existing),
+    ]);
 
     // Step 2: Create PandaDoc document
-    const doc = await createProposalDocument(existing, coverLetter);
+    const doc = await createProposalDocument(existing, coverLetter, projectDescription);
 
     // Step 3: Determine version number
     const existingVersions = listProposalVersions(existing.id);

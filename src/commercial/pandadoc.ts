@@ -108,7 +108,8 @@ function parseClientName(fullName: string): { first: string; last: string } {
  */
 export async function createProposalDocument(
   project: CommercialProjectRow,
-  coverLetterText: string
+  coverLetterText: string,
+  projectDescription: string
 ): Promise<PandaDocDocument> {
   const projectTypeLabel = project.project_type
     ? project.project_type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
@@ -142,7 +143,7 @@ export async function createProposalDocument(
       { name: 'Client.FirstName',    value: first },
       { name: 'Client.LastName',     value: last },
       { name: 'cover.letter',        value: coverLetterText },
-      { name: 'project.description', value: project.project_description ?? '' },
+      { name: 'project.description', value: projectDescription },
       { name: 'deliverables.list',   value: deliverablesList },
       { name: 'payment.schedule',    value: paymentText },
     ],

@@ -145,6 +145,58 @@ Requirements:
 }
 
 // ─────────────────────────────────────────────────────────────
+// Project description generation
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Generate a polished 1-2 sentence project description for the proposal.
+ * This sits just above the deliverables table — a brief, creative summary
+ * of the scope of work, neatly packaged.
+ */
+export async function generateProjectDescription(project: CommercialProjectRow): Promise<string> {
+  const client = new Anthropic({ apiKey: config.anthropicApiKey });
+
+  const deliverables: string[] = project.deliverables
+    ? (JSON.parse(project.deliverables) as string[])
+    : [];
+
+  const projectTypeLabel = PROJECT_TYPE_LABELS[project.project_type ?? ''] ?? 'video production';
+  const knowledgeBase = await loadCompanyKnowledgeBase();
+
+  const systemPrompt = `You write concise, polished project descriptions for video production proposals at Digital Spark Studios. Your descriptions are crisp and purposeful. No em dashes. No filler. No clichés.
+
+${knowledgeBase ? `DIGITAL SPARK STUDIOS KNOWLEDGE BASE:\n${knowledgeBase}` : ''}`;
+
+  const userPrompt = `Write a 1-2 sentence project description for the following scope of work. This will appear directly above the deliverables table in a client proposal. It should summarize what the project is — briefly, creatively, and clearly. Think of it as the headline for the work.
+
+Client: ${project.client_name}
+Project Type: ${projectTypeLabel}
+Raw Description: ${project.project_description ?? 'Not specified'}
+Deliverables: ${deliverables.length > 0 ? deliverables.join(', ') : 'To be confirmed'}
+
+Rules:
+- 1 to 2 sentences maximum
+- Describe the scope creatively but concisely
+- No em dashes
+- No sign-off, no intro preamble — just the description itself`;
+
+  const message = await client.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 150,
+    system: systemPrompt,
+    messages: [{ role: 'user', content: userPrompt }],
+  });
+
+  const text =
+    message.content[0]?.type === 'text' ? message.content[0].text.trim() : '';
+
+  return text
+    .replace(/\u2014/g, '-')
+    .replace(/\u2013/g, '-')
+    .trim();
+}
+
+// ─────────────────────────────────────────────────────────────
 // Payment schedule helper
 // ─────────────────────────────────────────────────────────────
 
