@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Save, CheckCircle, Plus, X, ChevronDown, ExternalLink, FileText, Sparkles,
+  ArrowLeft, Save, CheckCircle, Plus, X, ChevronDown, ExternalLink, FileText, Sparkles, RefreshCw,
 } from 'lucide-react';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { authFetch } from '../lib/auth';
@@ -158,6 +158,7 @@ export function BriefReview() {
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [reanalyzing, setReanalyzing] = useState(false);
   const [pandadocUrl, setPandadocUrl] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -257,6 +258,25 @@ export function BriefReview() {
     }
   }
 
+  async function handleReanalyze() {
+    if (!project?.fireflies_transcript_id) return;
+    setReanalyzing(true);
+    setError(null);
+    try {
+      const res = await authFetch(
+        `/api/commercial/calls/${project.fireflies_transcript_id}/extract?force=true`,
+        { method: 'POST' }
+      );
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error ?? 'Re-analysis failed');
+      void loadProject();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Re-analysis failed');
+    } finally {
+      setReanalyzing(false);
+    }
+  }
+
   async function handleConfirm() {
     if (!projectId) return;
     // Auto-save first
@@ -316,11 +336,24 @@ export function BriefReview() {
             Review and edit the extracted brief before confirming. All fields are editable.
           </p>
         </div>
-        {isConfirmed && (
-          <span className="flex items-center gap-1.5 text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg">
-            <CheckCircle size={15} /> Confirmed
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {project?.fireflies_transcript_id && (
+            <button
+              type="button"
+              onClick={() => void handleReanalyze()}
+              disabled={reanalyzing}
+              className="flex items-center gap-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors shadow-sm"
+            >
+              <RefreshCw size={13} className={reanalyzing ? 'animate-spin' : ''} />
+              {reanalyzing ? 'Re-analyzing…' : 'Re-analyze Transcript'}
+            </button>
+          )}
+          {isConfirmed && (
+            <span className="flex items-center gap-1.5 text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg">
+              <CheckCircle size={15} /> Confirmed
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="space-y-8">

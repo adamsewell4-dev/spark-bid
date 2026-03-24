@@ -91,31 +91,38 @@ commercialRouter.post('/calls/:transcriptId/extract', async (req, res) => {
     });
   }
 
+  const force = req.query['force'] === 'true';
+
   try {
-    // Check if already extracted
+    // Return early if already extracted, unless force re-analysis is requested
     const existing = getCommercialProjectByTranscript(transcriptId);
-    if (existing) {
+    if (existing && !force) {
       return res.json({ success: true, data: existing });
     }
 
     const brief: ProjectBrief = await fetchAndExtractBrief(transcriptId);
 
-    const id = randomUUID();
+    // Re-analysis: preserve status, PandaDoc linkage, and user-confirmed seeds
+    const id = existing?.id ?? randomUUID();
     upsertCommercialProject({
       id,
       fireflies_transcript_id: brief.transcriptId,
-      client_name: brief.clientName,
+      client_name: existing?.client_name ?? brief.clientName,  // keep human edits to name
       project_type: brief.projectType,
       project_description: brief.projectDescription,
       deliverables: JSON.stringify(brief.deliverables),
       timeline: brief.timeline,
       budget_signal: brief.budgetSignal,
       tone: brief.tone,
-      cover_letter_seeds: JSON.stringify([]),               // starts empty — user confirms from suggestions
-      suggested_seeds: JSON.stringify(brief.coverLetterSeeds), // AI-extracted, shown as clickable chips
+      cover_letter_seeds: existing?.cover_letter_seeds ?? JSON.stringify([]),
+      suggested_seeds: JSON.stringify(brief.coverLetterSeeds),  // refreshed from transcript
       case_study_match: brief.caseStudyMatch,
       payment_schedule: brief.paymentSchedule,
-      status: 'brief_pending',
+      discovery_notes: existing?.discovery_notes ?? null,       // preserve human notes
+      status: existing?.status ?? 'brief_pending',
+      saturation_project_id: existing?.saturation_project_id ?? null,
+      pandadoc_document_id: existing?.pandadoc_document_id ?? null,
+      pandadoc_status: existing?.pandadoc_status ?? null,
     });
 
     const saved = getCommercialProject(id);
