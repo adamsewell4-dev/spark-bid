@@ -111,7 +111,8 @@ commercialRouter.post('/calls/:transcriptId/extract', async (req, res) => {
       timeline: brief.timeline,
       budget_signal: brief.budgetSignal,
       tone: brief.tone,
-      cover_letter_seeds: JSON.stringify(brief.coverLetterSeeds),
+      cover_letter_seeds: JSON.stringify([]),               // starts empty — user confirms from suggestions
+      suggested_seeds: JSON.stringify(brief.coverLetterSeeds), // AI-extracted, shown as clickable chips
       case_study_match: brief.caseStudyMatch,
       payment_schedule: brief.paymentSchedule,
       status: 'brief_pending',
@@ -171,6 +172,7 @@ commercialRouter.put('/projects/:id', (req, res) => {
     budget_signal: string;
     tone: string;
     cover_letter_seeds: string[];
+    suggested_seeds: string[];
     case_study_match: string;
     payment_schedule: string;
     discovery_notes: string;
@@ -191,6 +193,7 @@ commercialRouter.put('/projects/:id', (req, res) => {
     cover_letter_seeds: body.cover_letter_seeds
       ? JSON.stringify(body.cover_letter_seeds)
       : existing.cover_letter_seeds,
+    suggested_seeds: existing.suggested_seeds,   // never overwritten by user edits
     case_study_match: body.case_study_match ?? existing.case_study_match,
     payment_schedule: body.payment_schedule ?? existing.payment_schedule,
     discovery_notes: body.discovery_notes ?? existing.discovery_notes,

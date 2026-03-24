@@ -20,7 +20,8 @@ interface CommercialProject {
   timeline: string | null;
   budget_signal: string | null;
   tone: string | null;
-  cover_letter_seeds: string | null;   // JSON array
+  cover_letter_seeds: string | null;   // JSON array — user confirmed
+  suggested_seeds: string | null;      // JSON array — AI suggestions from transcript
   case_study_match: string | null;
   payment_schedule: string | null;
   discovery_notes: string | null;
@@ -36,6 +37,8 @@ const PROJECT_TYPES = [
   { value: 'product_launch',    label: 'Product Launch Video' },
   { value: 'corporate_story',   label: 'Corporate / Brand Story' },
   { value: 'training_video',    label: 'Training / Educational Video' },
+  { value: 'photography',       label: 'Photography' },
+  { value: 'animation',         label: 'Animation' },
   { value: 'unknown',           label: 'Unknown / Other' },
 ] as const;
 
@@ -162,12 +165,12 @@ export function BriefReview() {
   // Form state — mirrors CommercialProject fields
   const [clientName, setClientName] = useState('');
   const [projectType, setProjectType] = useState('unknown');
-  const [projectDescription, setProjectDescription] = useState('');
   const [deliverables, setDeliverables] = useState<string[]>([]);
   const [timeline, setTimeline] = useState('');
   const [budgetSignal, setBudgetSignal] = useState('');
   const [tone, setTone] = useState('');
   const [coverLetterSeeds, setCoverLetterSeeds] = useState<string[]>([]);
+  const [suggestedSeeds, setSuggestedSeeds] = useState<string[]>([]);
   const [caseStudyMatch, setCaseStudyMatch] = useState('');
   const [paymentSchedule, setPaymentSchedule] = useState<string>('');
   const [discoveryNotes, setDiscoveryNotes] = useState('');
@@ -185,12 +188,12 @@ export function BriefReview() {
       // Populate form
       setClientName(p.client_name);
       setProjectType(p.project_type ?? 'unknown');
-      setProjectDescription(p.project_description ?? '');
       setDeliverables(p.deliverables ? (JSON.parse(p.deliverables) as string[]) : []);
       setTimeline(p.timeline ?? '');
       setBudgetSignal(p.budget_signal ?? '');
       setTone(p.tone ?? '');
       setCoverLetterSeeds(p.cover_letter_seeds ? (JSON.parse(p.cover_letter_seeds) as string[]) : []);
+      setSuggestedSeeds(p.suggested_seeds ? (JSON.parse(p.suggested_seeds) as string[]) : []);
       setCaseStudyMatch(p.case_study_match ?? '');
       setPaymentSchedule(p.payment_schedule ?? '');
       setDiscoveryNotes(p.discovery_notes ?? '');
@@ -214,7 +217,6 @@ export function BriefReview() {
         body: JSON.stringify({
           client_name: clientName,
           project_type: projectType,
-          project_description: projectDescription,
           deliverables,
           timeline,
           budget_signal: budgetSignal,
@@ -356,12 +358,15 @@ export function BriefReview() {
           </div>
 
           <div>
-            <FieldLabel>Project Description</FieldLabel>
+            <FieldLabel>Discovery Notes</FieldLabel>
+            <p className="text-xs text-gray-400 mb-2">
+              Brief overview of what was discussed — production context, client goals, logistics. Cross-referenced with the transcript to sharpen proposal copy.
+            </p>
             <textarea
-              value={projectDescription}
-              onChange={(e) => setProjectDescription(e.target.value)}
-              rows={3}
-              placeholder="1–2 sentence summary of what is being produced…"
+              value={discoveryNotes}
+              onChange={(e) => setDiscoveryNotes(e.target.value)}
+              rows={4}
+              placeholder="e.g. 2-day studio shoot, cross-functional crew covering photography and video simultaneously, primary goal is eCommerce PDPs for spring launch…"
               className={`${inputClass} resize-none`}
             />
           </div>
@@ -422,30 +427,43 @@ export function BriefReview() {
           <div>
             <FieldLabel>Cover Letter Seeds</FieldLabel>
             <p className="text-xs text-gray-400 mb-2">
-              Key phrases from Daniel or the client — used as seed language in the cover letter.
+              Language the client uses — woven into the cover letter naturally. Click suggestions to add, or type your own.
             </p>
+
+            {/* Suggested chips from transcript */}
+            {suggestedSeeds.length > 0 && (
+              <div className="mb-3">
+                <p className="text-xs font-medium text-gray-500 mb-2">Suggested from transcript:</p>
+                <div className="flex flex-wrap gap-2">
+                  {suggestedSeeds.map((seed, i) => {
+                    const alreadyAdded = coverLetterSeeds.includes(seed);
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        disabled={alreadyAdded}
+                        onClick={() => {
+                          if (!alreadyAdded) setCoverLetterSeeds([...coverLetterSeeds, seed]);
+                        }}
+                        className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                          alreadyAdded
+                            ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-default'
+                            : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50 hover:border-indigo-400 cursor-pointer'
+                        }`}
+                      >
+                        {alreadyAdded ? null : <Plus size={10} />}
+                        {seed}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <TagEditor
               tags={coverLetterSeeds}
               onChange={setCoverLetterSeeds}
-              placeholder="e.g. 'storytelling that converts'"
-            />
-          </div>
-        </div>
-
-        {/* ── Discovery Notes ── */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5">
-          <SectionLabel>Discovery Notes</SectionLabel>
-          <div>
-            <FieldLabel>Notes from the Discovery Call</FieldLabel>
-            <p className="text-xs text-gray-400 mb-2">
-              Write a brief overview of what was discussed — production context, client goals, logistics, anything not captured above. This gets cross-referenced with the transcript to sharpen the proposal copy.
-            </p>
-            <textarea
-              value={discoveryNotes}
-              onChange={(e) => setDiscoveryNotes(e.target.value)}
-              rows={5}
-              placeholder="e.g. 2-day studio shoot at their Charlotte facility, cross-functional crew covering photography and video simultaneously, primary goal is eCommerce PDPs for spring launch, client emphasized speed of delivery…"
-              className={`${inputClass} resize-none`}
+              placeholder="Add a phrase manually…"
             />
           </div>
         </div>

@@ -111,7 +111,8 @@ CREATE TABLE IF NOT EXISTS commercial_projects (
   timeline                TEXT,
   budget_signal           TEXT,                  -- What was said on the call, verbatim
   tone                    TEXT,                  -- Creative direction / tone descriptors
-  cover_letter_seeds      TEXT,                  -- JSON array of key phrases from transcript
+  cover_letter_seeds      TEXT,                  -- JSON array of user-confirmed seed phrases
+  suggested_seeds         TEXT,                  -- JSON array of AI-suggested phrases from transcript (read-only suggestions)
   case_study_match        TEXT,                  -- Suggested past performance references
   payment_schedule        TEXT,                  -- 'option_a' | 'option_b'
   discovery_notes         TEXT,                  -- Free-text notes from the person on the discovery call

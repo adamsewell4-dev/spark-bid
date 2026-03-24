@@ -39,6 +39,7 @@ function migrate(): void {
   // Additive column migrations — safe to run repeatedly on existing databases
   const addColumns: { table: string; column: string; definition: string }[] = [
     { table: 'commercial_projects', column: 'discovery_notes', definition: 'TEXT' },
+    { table: 'commercial_projects', column: 'suggested_seeds',  definition: 'TEXT' },
   ];
 
   for (const { table, column, definition } of addColumns) {

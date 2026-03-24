@@ -338,7 +338,8 @@ export interface CommercialProjectRow {
   timeline: string | null;
   budget_signal: string | null;
   tone: string | null;
-  cover_letter_seeds: string | null;    // JSON array
+  cover_letter_seeds: string | null;    // JSON array — user-confirmed seeds
+  suggested_seeds: string | null;       // JSON array — AI-extracted suggestions from transcript
   case_study_match: string | null;
   payment_schedule: string | null;
   discovery_notes: string | null;
@@ -361,6 +362,7 @@ export interface UpsertCommercialProjectInput {
   budget_signal?: string | null;
   tone?: string | null;
   cover_letter_seeds?: string | null;
+  suggested_seeds?: string | null;
   case_study_match?: string | null;
   payment_schedule?: string | null;
   discovery_notes?: string | null;
@@ -385,12 +387,12 @@ export function upsertCommercialProject(input: UpsertCommercialProjectInput): vo
   const stmt = db.prepare(`
     INSERT INTO commercial_projects (
       id, fireflies_transcript_id, client_name, project_type, project_description,
-      deliverables, timeline, budget_signal, tone, cover_letter_seeds,
+      deliverables, timeline, budget_signal, tone, cover_letter_seeds, suggested_seeds,
       case_study_match, payment_schedule, discovery_notes, status,
       saturation_project_id, pandadoc_document_id, pandadoc_status, updated_at
     ) VALUES (
       @id, @fireflies_transcript_id, @client_name, @project_type, @project_description,
-      @deliverables, @timeline, @budget_signal, @tone, @cover_letter_seeds,
+      @deliverables, @timeline, @budget_signal, @tone, @cover_letter_seeds, @suggested_seeds,
       @case_study_match, @payment_schedule, @discovery_notes, @status,
       @saturation_project_id, @pandadoc_document_id, @pandadoc_status,
       strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
@@ -404,6 +406,7 @@ export function upsertCommercialProject(input: UpsertCommercialProjectInput): vo
       budget_signal           = excluded.budget_signal,
       tone                    = excluded.tone,
       cover_letter_seeds      = excluded.cover_letter_seeds,
+      suggested_seeds         = excluded.suggested_seeds,
       case_study_match        = excluded.case_study_match,
       payment_schedule        = excluded.payment_schedule,
       discovery_notes         = excluded.discovery_notes,
@@ -425,6 +428,7 @@ export function upsertCommercialProject(input: UpsertCommercialProjectInput): vo
     budget_signal: input.budget_signal ?? null,
     tone: input.tone ?? null,
     cover_letter_seeds: input.cover_letter_seeds ?? null,
+    suggested_seeds: input.suggested_seeds ?? null,
     case_study_match: input.case_study_match ?? null,
     payment_schedule: input.payment_schedule ?? null,
     discovery_notes: input.discovery_notes ?? null,
