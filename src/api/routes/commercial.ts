@@ -370,11 +370,13 @@ commercialRouter.get('/projects/:id/estimate', async (req, res) => {
   }
 
   try {
-    const buffer = await generateEstimateXlsx(existing);
+    const raw = await generateEstimateXlsx(existing);
+    const buffer = Buffer.isBuffer(raw) ? raw : Buffer.from(raw as ArrayBuffer);
     const filename = `${existing.client_name.replace(/[^a-z0-9]/gi, '_')}_Estimate.xlsx`;
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send(buffer);
+    res.setHeader('Content-Length', buffer.length);
+    res.end(buffer);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return res.json({ success: false, error: `Estimate generation failed: ${message}` });

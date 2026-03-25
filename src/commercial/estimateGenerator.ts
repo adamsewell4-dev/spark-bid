@@ -425,7 +425,7 @@ Rules:
 // XLSX builder
 // ─────────────────────────────────────────────────────────────
 
-export async function generateEstimateXlsx(project: CommercialProjectRow): Promise<Buffer> {
+export async function generateEstimateXlsx(project: CommercialProjectRow): Promise<Buffer | ArrayBuffer> {
   const suggestions = await suggestLineItems(project);
 
   // Build lookup: "A1" -> qty
@@ -626,5 +626,5 @@ export async function generateEstimateXlsx(project: CommercialProjectRow): Promi
     summaryRowIdx++;
   }
 
-  return workbook.xlsx.writeBuffer() as unknown as Promise<Buffer>;
+  return workbook.xlsx.writeBuffer();
 }
